@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+
+/* Heading / numeral font, bundled locally (works offline). Body text uses the
+   system Devanagari font (Noto Sans Devanagari on Android). woff2 only — every
+   supported Android WebView reads it — and unicode-range so each subset loads
+   only when its characters appear. */
+@font-face {
+  font-family: 'Tiro Devanagari Hindi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/tiro-devanagari-hindi/files/tiro-devanagari-hindi-devanagari-400-normal.woff2') format('woff2');
+  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+20F0, U+25CC, U+A830-A839, U+A8E0-A8FF;
+}
+@font-face {
+  font-family: 'Tiro Devanagari Hindi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@fontsource/tiro-devanagari-hindi/files/tiro-devanagari-hindi-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+}
+
+@theme {
+  --font-sans: 'Noto Sans Devanagari', 'Noto Sans', system-ui, sans-serif;
+  --font-display: 'Noto Sans Devanagari', 'Noto Sans', system-ui, sans-serif;
+
+  /* Warm "printed calendar" palette. Text colours meet WCAG AA on paper/card. */
+  --color-paper: #fbf5ea;
+  --color-card: #fffdf8;
+  --color-ink: #2a1a10;
+  --color-muted: #6b5444;
+  --color-line: #e8d9c0;
+  --color-maroon: #7a1f2b;
+  --color-maroon-dark: #5c1520;
+  --color-saffron: #c2410c;
+  --color-saffron-soft: #fde8d4;
+  --color-gold: #b7862b;
+  --color-gold-soft: #f6e7c1;
+  --color-sunday: #b4231b;
+  --color-vrat: #2f6b3a;
+  --color-national: #1e4b8f;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    /* Devanagari needs extra line height so matras are never clipped. */
+    line-height: 1.6;
+    overscroll-behavior-y: none;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-card rounded-2xl border border-line shadow-[0_1px_2px_rgb(90_50_20/0.06)];
+  }
+  /* Thin decorative "toran" band under the header. */
+  .toran {
+    height: 6px;
+    background:
+      radial-gradient(circle at 6px -1px, var(--color-gold) 4px, transparent 4.5px) 0 0 / 12px 6px repeat-x,
+      var(--color-maroon-dark);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Subtle page-turn between front (calendar) and back (community) pages. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(var(--turn-from, 6deg)) translateX(var(--slide-from, 12px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-in {
+  animation: page-in 260ms ease-out both;
+  transform-origin: left center;
+}
+.page-in-reverse {
+  --turn-from: -6deg;
+  --slide-from: -12px;
+  transform-origin: right center;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sheet-up {
+  animation: sheet-up 220ms ease-out both;
+}
+.fade-in {
+  animation: fade-in 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-in,
+  .sheet-up,
+  .fade-in {
+    animation: none;
+  }
+}

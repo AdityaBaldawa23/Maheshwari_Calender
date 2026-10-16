@@ -1,0 +1,22 @@
+{
+  "_comment": "Back-page advertisements. Images go in /public/ads/ and are referenced as \"ads/<file>\". Allowed link types: tel, https, mailto, whatsapp (digits only). Ads outside startDate–endDate or with active=false are hidden. Lower priority number = shown first.",
+  "ads": [
+    {
+      "id": "ad-sample-001",
+      "title": { "hi": "यहाँ आपका विज्ञापन", "en": "Your advertisement here" },
+      "description": { "hi": "अपने व्यवसाय को समाज के हर परिवार तक पहुँचाएँ। विज्ञापन हेतु संपर्क करें।", "en": "Reach every family in the community. Contact us to advertise." },
+      "image": "ads/sample-banner.svg",
+      "sponsor": { "hi": "नमूना विज्ञापन", "en": "Sample advertisement" },
+      "active": true,
+      "priority": 1
+    },
+    {
+      "id": "ad-sample-002",
+      "title": { "hi": "प्रायोजक बनें", "en": "Become a sponsor" },
+      "description": { "hi": "ज्वेलर्स, वस्त्र, मिठाई, शिक्षा — सभी व्यवसायों के लिए स्थान उपलब्ध।", "en": "Space available for jewellers, textiles, sweets, education and more." },
+      "sponsor": { "hi": "नमूना विज्ञापन", "en": "Sample advertisement" },
+      "active": true,
+      "priority": 2
+    }
+  ]
+}

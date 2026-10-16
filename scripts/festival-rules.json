@@ -1,0 +1,211 @@
+{
+  "_comment": "Rules used by `npm run generate-panchang` to place lunar festivals. Months here are AMANTA (new-moon-ending) names; e.g. Diwali is amanta Ashwin Krishna Amavasya, which the app displays as purnimanta 'कार्तिक कृष्ण अमावस्या'. `at` is the time of day at which the tithi must prevail: sunrise | pradosh | madhyahna | aparahna | nishita. Generated dates MUST be verified against a trusted panchang before release.",
+  "festivals": [
+    { "id": "makar-sankranti", "rule": { "type": "sankranti", "rashi": 9 },
+      "title": { "hi": "मकर संक्रांति", "en": "Makar Sankranti" },
+      "description": { "hi": "सूर्य का मकर राशि में प्रवेश। तिल-गुड़, दान एवं पतंग का पर्व।", "en": "Sun enters Capricorn. Festival of sesame-jaggery, charity and kites." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "til-chauth", "rule": { "type": "tithi", "maas": "paush", "paksha": "krishna", "tithi": 4, "at": "pradosh" },
+      "title": { "hi": "तिल चौथ (सकट चौथ)", "en": "Til Chauth (Sakat Chauth)" },
+      "description": { "hi": "माघ कृष्ण चतुर्थी। संतान की मंगलकामना हेतु व्रत, चंद्र दर्शन के पश्चात पारण।", "en": "Magh Krishna Chaturthi fast for children's well-being, broken after moonrise." },
+      "category": "marwadi", "importance": "medium" },
+
+    { "id": "vasant-panchami", "rule": { "type": "tithi", "maas": "magh", "paksha": "shukla", "tithi": 5, "at": "sunrise" },
+      "title": { "hi": "वसंत पंचमी", "en": "Vasant Panchami" },
+      "description": { "hi": "माँ सरस्वती पूजन एवं वसंत ऋतु का स्वागत।", "en": "Worship of Goddess Saraswati; welcoming spring." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "maha-shivratri", "rule": { "type": "tithi", "maas": "magh", "paksha": "krishna", "tithi": 14, "at": "nishita" },
+      "title": { "hi": "महाशिवरात्रि", "en": "Maha Shivratri" },
+      "description": { "hi": "भगवान शिव की आराधना की महान रात्रि। माहेश्वरी समाज के आराध्य भगवान महेश का पर्व।", "en": "The great night of Lord Shiva, revered by the Maheshwari community as Bhagwan Mahesh." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "holika-dahan", "rule": { "type": "tithi", "maas": "phalgun", "paksha": "shukla", "tithi": 15, "at": "pradosh", "avoidBhadra": true, "nextDayMinDayFraction": 0.75 },
+      "title": { "hi": "होलिका दहन", "en": "Holika Dahan" },
+      "description": { "hi": "फाल्गुन पूर्णिमा की संध्या पर होलिका दहन।", "en": "Bonfire on the evening of Phalgun Purnima." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "holi", "rule": { "type": "offset", "of": "holika-dahan", "days": 1 },
+      "title": { "hi": "होली (धुलंडी)", "en": "Holi (Dhulandi)" },
+      "description": { "hi": "रंगों का पर्व। इसी दिन से गणगौर पूजन आरंभ होता है।", "en": "Festival of colours; Gangaur worship begins from this day." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "dasha-mata", "rule": { "type": "tithi", "maas": "phalgun", "paksha": "krishna", "tithi": 10, "at": "sunrise" },
+      "title": { "hi": "दशा माता व्रत", "en": "Dasha Mata Vrat" },
+      "description": { "hi": "चैत्र कृष्ण दशमी। परिवार की सुख-समृद्धि हेतु सुहागिनों का व्रत।", "en": "Chaitra Krishna Dashami fast by married women for family prosperity." },
+      "category": "marwadi", "importance": "low" },
+
+    { "id": "shitala-ashtami", "rule": { "type": "tithi", "maas": "phalgun", "paksha": "krishna", "tithi": 8, "at": "sunrise" },
+      "title": { "hi": "शीतला अष्टमी (बासोड़ा)", "en": "Shitala Ashtami (Basoda)" },
+      "description": { "hi": "चैत्र कृष्ण अष्टमी। माँ शीतला को ठंडे (बासी) भोजन का भोग।", "en": "Chaitra Krishna Ashtami; cold food is offered to Mata Shitala." },
+      "category": "marwadi", "importance": "medium" },
+
+    { "id": "hindu-nav-varsh", "rule": { "type": "tithi", "maas": "chaitra", "paksha": "shukla", "tithi": 1, "at": "sunrise" },
+      "title": { "hi": "हिंदू नव वर्ष / चैत्र नवरात्रि आरंभ", "en": "Hindu New Year / Chaitra Navratri begins" },
+      "description": { "hi": "विक्रम संवत का नव वर्ष एवं चैत्र नवरात्रि का प्रथम दिवस।", "en": "Vikram Samvat new year and first day of Chaitra Navratri." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "gangaur", "rule": { "type": "tithi", "maas": "chaitra", "paksha": "shukla", "tithi": 3, "at": "sunrise" },
+      "title": { "hi": "गणगौर", "en": "Gangaur" },
+      "description": { "hi": "शिव-पार्वती (ईसर-गौर) पूजन का मारवाड़ी महापर्व, सुहाग एवं सौभाग्य का प्रतीक।", "en": "Major Marwadi festival worshipping Isar-Gaur (Shiva-Parvati)." },
+      "category": "marwadi", "importance": "high" },
+
+    { "id": "ram-navami", "rule": { "type": "tithi", "maas": "chaitra", "paksha": "shukla", "tithi": 9, "at": "madhyahna" },
+      "title": { "hi": "राम नवमी", "en": "Ram Navami" },
+      "description": { "hi": "भगवान श्रीराम का जन्मोत्सव।", "en": "Birth of Lord Rama." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "hanuman-jayanti", "rule": { "type": "tithi", "maas": "chaitra", "paksha": "shukla", "tithi": 15, "at": "sunrise" },
+      "title": { "hi": "हनुमान जयंती", "en": "Hanuman Jayanti" },
+      "description": { "hi": "श्री हनुमान जी का जन्मोत्सव।", "en": "Birth of Lord Hanuman." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "akshaya-tritiya", "rule": { "type": "tithi", "maas": "vaishakh", "paksha": "shukla", "tithi": 3, "at": "sunrise" },
+      "title": { "hi": "अक्षय तृतीया (आखा तीज)", "en": "Akshaya Tritiya (Aakha Teej)" },
+      "description": { "hi": "अबूझ मुहूर्त। शुभ कार्य, दान एवं नए आरंभ का दिन।", "en": "An inherently auspicious day for new beginnings and charity." },
+      "category": "marwadi", "importance": "high" },
+
+    { "id": "vat-savitri", "rule": { "type": "tithi", "maas": "vaishakh", "paksha": "krishna", "tithi": 15, "at": "sunrise" },
+      "title": { "hi": "वट सावित्री व्रत", "en": "Vat Savitri Vrat" },
+      "description": { "hi": "ज्येष्ठ अमावस्या। सुहागिनों द्वारा पति की दीर्घायु हेतु वट वृक्ष पूजन।", "en": "Jyeshtha Amavasya; married women worship the banyan tree." },
+      "category": "vrat", "importance": "medium" },
+
+    { "id": "mahesh-navami", "rule": { "type": "tithi", "maas": "jyeshtha", "paksha": "shukla", "tithi": 9, "at": "sunrise" },
+      "title": { "hi": "महेश नवमी", "en": "Mahesh Navami" },
+      "description": { "hi": "माहेश्वरी समाज का वंशोत्पत्ति दिवस। भगवान महेश एवं माता पार्वती की कृपा से माहेश्वरी समाज की उत्पत्ति का पावन पर्व।", "en": "Foundation day of the Maheshwari community, celebrating its origin by the grace of Bhagwan Mahesh and Mata Parvati." },
+      "category": "maheshwari", "importance": "high" },
+
+    { "id": "guru-purnima", "rule": { "type": "tithi", "maas": "ashadh", "paksha": "shukla", "tithi": 15, "at": "sunrise" },
+      "title": { "hi": "गुरु पूर्णिमा", "en": "Guru Purnima" },
+      "description": { "hi": "गुरु के प्रति श्रद्धा एवं कृतज्ञता का पर्व।", "en": "Day of reverence for one's guru." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "hariyali-teej", "rule": { "type": "tithi", "maas": "shravan", "paksha": "shukla", "tithi": 3, "at": "sunrise" },
+      "title": { "hi": "हरियाली तीज", "en": "Hariyali Teej" },
+      "description": { "hi": "श्रावण शुक्ल तृतीया। सावन के झूले एवं सुहाग का पर्व।", "en": "Shravan Shukla Tritiya; monsoon festival of swings and marital bliss." },
+      "category": "marwadi", "importance": "high" },
+
+    { "id": "nag-panchami", "rule": { "type": "tithi", "maas": "shravan", "paksha": "shukla", "tithi": 5, "at": "sunrise" },
+      "title": { "hi": "नाग पंचमी", "en": "Nag Panchami" },
+      "description": { "hi": "नाग देवता का पूजन।", "en": "Worship of the serpent deities." },
+      "category": "vrat", "importance": "low" },
+
+    { "id": "raksha-bandhan", "rule": { "type": "tithi", "maas": "shravan", "paksha": "shukla", "tithi": 15, "at": "aparahna", "avoidBhadra": true, "nextDayMinDayFraction": 0.2 },
+      "title": { "hi": "रक्षाबंधन", "en": "Raksha Bandhan" },
+      "description": { "hi": "भाई-बहन के स्नेह का पर्व। राखी बाँधने से पहले भद्रा काल अवश्य देखें।", "en": "Festival of the sibling bond. Check Bhadra timing before tying rakhi." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "kajari-teej", "rule": { "type": "tithi", "maas": "shravan", "paksha": "krishna", "tithi": 3, "at": "sunrise" },
+      "title": { "hi": "कजली तीज (बड़ी तीज / सातुड़ी तीज)", "en": "Kajari Teej (Badi Teej / Satudi Teej)" },
+      "description": { "hi": "भाद्रपद कृष्ण तृतीया। सत्तू एवं नीमड़ी माता पूजन, चंद्र दर्शन के बाद पारण।", "en": "Bhadrapad Krishna Tritiya; Satu offering and Neemdi Mata worship, fast broken after moonrise." },
+      "category": "marwadi", "importance": "high" },
+
+    { "id": "janmashtami", "rule": { "type": "tithi", "maas": "shravan", "paksha": "krishna", "tithi": 8, "at": "nishita" },
+      "title": { "hi": "श्रीकृष्ण जन्माष्टमी", "en": "Krishna Janmashtami" },
+      "description": { "hi": "भगवान श्रीकृष्ण का जन्मोत्सव।", "en": "Birth of Lord Krishna." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "bachh-baras", "rule": { "type": "tithi", "maas": "shravan", "paksha": "krishna", "tithi": 12, "at": "sunrise" },
+      "title": { "hi": "बछ बारस", "en": "Bachh Baras" },
+      "description": { "hi": "भाद्रपद कृष्ण द्वादशी। गाय-बछड़े का पूजन एवं पुत्र की मंगलकामना।", "en": "Bhadrapad Krishna Dwadashi; worship of cow and calf for sons' well-being." },
+      "category": "marwadi", "importance": "low" },
+
+    { "id": "ganesh-chaturthi", "rule": { "type": "tithi", "maas": "bhadrapad", "paksha": "shukla", "tithi": 4, "at": "madhyahna" },
+      "title": { "hi": "गणेश चतुर्थी", "en": "Ganesh Chaturthi" },
+      "description": { "hi": "भगवान श्री गणेश का जन्मोत्सव।", "en": "Birth of Lord Ganesha." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "anant-chaturdashi", "rule": { "type": "tithi", "maas": "bhadrapad", "paksha": "shukla", "tithi": 14, "at": "sunrise" },
+      "title": { "hi": "अनंत चतुर्दशी", "en": "Anant Chaturdashi" },
+      "description": { "hi": "भगवान अनंत (विष्णु) पूजन एवं गणेश विसर्जन।", "en": "Worship of Lord Anant; Ganesh immersion." },
+      "category": "vrat", "importance": "medium" },
+
+    { "id": "sarva-pitru-amavasya", "rule": { "type": "tithi", "maas": "bhadrapad", "paksha": "krishna", "tithi": 15, "at": "aparahna" },
+      "title": { "hi": "सर्वपितृ अमावस्या", "en": "Sarva Pitru Amavasya" },
+      "description": { "hi": "पितृ पक्ष का समापन; सभी पितरों का श्राद्ध।", "en": "Close of Pitru Paksha; shraddha for all ancestors." },
+      "category": "vrat", "importance": "medium" },
+
+    { "id": "sharad-navratri", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "shukla", "tithi": 1, "at": "sunrise" },
+      "title": { "hi": "शारदीय नवरात्रि आरंभ (घटस्थापना)", "en": "Sharad Navratri begins (Ghatasthapana)" },
+      "description": { "hi": "माँ दुर्गा की नौ दिवसीय आराधना का आरंभ।", "en": "Start of nine nights of worship of Goddess Durga." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "durga-ashtami", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "shukla", "tithi": 8, "at": "sunrise" },
+      "title": { "hi": "दुर्गा अष्टमी", "en": "Durga Ashtami" },
+      "description": { "hi": "नवरात्रि की महाअष्टमी; कन्या पूजन।", "en": "Maha Ashtami of Navratri; Kanya puja." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "dussehra", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "shukla", "tithi": 10, "at": "aparahna" },
+      "title": { "hi": "दशहरा (विजयादशमी)", "en": "Dussehra (Vijayadashami)" },
+      "description": { "hi": "असत्य पर सत्य की विजय का पर्व।", "en": "Victory of good over evil." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "sharad-purnima", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "shukla", "tithi": 15, "at": "pradosh" },
+      "title": { "hi": "शरद पूर्णिमा", "en": "Sharad Purnima" },
+      "description": { "hi": "चंद्रमा की शीतल चाँदनी में खीर रखने की परंपरा।", "en": "Kheer is kept under the full moon's light." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "karwa-chauth", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "krishna", "tithi": 4, "at": "pradosh" },
+      "title": { "hi": "करवा चौथ", "en": "Karwa Chauth" },
+      "description": { "hi": "कार्तिक कृष्ण चतुर्थी। सुहागिनों का निर्जला व्रत, चंद्र दर्शन के पश्चात पारण।", "en": "Kartik Krishna Chaturthi; married women's fast broken after moonrise." },
+      "category": "marwadi", "importance": "high" },
+
+    { "id": "ahoi-ashtami", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "krishna", "tithi": 8, "at": "pradosh" },
+      "title": { "hi": "अहोई अष्टमी", "en": "Ahoi Ashtami" },
+      "description": { "hi": "संतान की मंगलकामना हेतु माताओं का व्रत।", "en": "Mothers' fast for their children's well-being." },
+      "category": "vrat", "importance": "low" },
+
+    { "id": "dhanteras", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "krishna", "tithi": 13, "at": "pradosh" },
+      "title": { "hi": "धनतेरस", "en": "Dhanteras" },
+      "description": { "hi": "धन्वंतरि पूजन; दीपोत्सव का आरंभ।", "en": "Worship of Dhanvantari; Deepotsav begins." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "roop-chaturdashi", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "krishna", "tithi": 14, "at": "sunrise" },
+      "title": { "hi": "रूप चतुर्दशी (नरक चतुर्दशी)", "en": "Roop Chaturdashi (Narak Chaturdashi)" },
+      "description": { "hi": "छोटी दीपावली; प्रातः अभ्यंग स्नान।", "en": "Choti Diwali; early-morning ritual bath." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "diwali", "rule": { "type": "tithi", "maas": "ashwin", "paksha": "krishna", "tithi": 15, "at": "pradosh" },
+      "title": { "hi": "दीपावली (लक्ष्मी पूजन)", "en": "Diwali (Lakshmi Puja)" },
+      "description": { "hi": "प्रदोष काल में माँ लक्ष्मी एवं श्री गणेश का पूजन। व्यापारियों का नव वर्ष (बही-खाता पूजन)।", "en": "Lakshmi-Ganesh puja in the evening; traders' new year (Bahi-khata puja)." },
+      "category": "festival", "importance": "high" },
+
+    { "id": "govardhan-puja", "rule": { "type": "offset", "of": "diwali", "days": 1 },
+      "title": { "hi": "गोवर्धन पूजा / अन्नकूट", "en": "Govardhan Puja / Annakut" },
+      "description": { "hi": "दीपावली के अगले दिन गोवर्धन पूजा एवं अन्नकूट।", "en": "Govardhan puja and Annakut, the day after Diwali." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "bhai-dooj", "rule": { "type": "tithi", "maas": "kartik", "paksha": "shukla", "tithi": 2, "at": "aparahna" },
+      "title": { "hi": "भाई दूज", "en": "Bhai Dooj" },
+      "description": { "hi": "भाई-बहन के प्रेम का पर्व; यम द्वितीया।", "en": "Celebration of the sibling bond; Yama Dwitiya." },
+      "category": "festival", "importance": "medium" },
+
+    { "id": "kartik-purnima", "rule": { "type": "tithi", "maas": "kartik", "paksha": "shukla", "tithi": 15, "at": "sunrise" },
+      "title": { "hi": "कार्तिक पूर्णिमा", "en": "Kartik Purnima" },
+      "description": { "hi": "देव दीपावली एवं पवित्र स्नान-दान का दिन।", "en": "Dev Deepawali; day of holy bath and charity." },
+      "category": "festival", "importance": "medium" }
+  ],
+
+  "ekadashi": {
+    "category": "vrat",
+    "importance": "low",
+    "idPrefix": "ekadashi",
+    "_comment": "Names are keyed by PURNIMANTA month (Krishna paksha precedes Shukla within a month). Adhik-month names are under 'adhik'.",
+    "names": {
+      "chaitra":      { "krishna": { "id": "papmochani", "hi": "पापमोचनी एकादशी", "en": "Papmochani Ekadashi" }, "shukla": { "id": "kamada", "hi": "कामदा एकादशी", "en": "Kamada Ekadashi" } },
+      "vaishakh":     { "krishna": { "id": "varuthini", "hi": "वरूथिनी एकादशी", "en": "Varuthini Ekadashi" }, "shukla": { "id": "mohini", "hi": "मोहिनी एकादशी", "en": "Mohini Ekadashi" } },
+      "jyeshtha":     { "krishna": { "id": "apara", "hi": "अपरा एकादशी", "en": "Apara Ekadashi" }, "shukla": { "id": "nirjala", "hi": "निर्जला एकादशी", "en": "Nirjala Ekadashi" } },
+      "ashadh":       { "krishna": { "id": "yogini", "hi": "योगिनी एकादशी", "en": "Yogini Ekadashi" }, "shukla": { "id": "devshayani", "hi": "देवशयनी एकादशी", "en": "Devshayani Ekadashi" } },
+      "shravan":      { "krishna": { "id": "kamika", "hi": "कामिका एकादशी", "en": "Kamika Ekadashi" }, "shukla": { "id": "shravan-putrada", "hi": "पुत्रदा एकादशी", "en": "Shravan Putrada Ekadashi" } },
+      "bhadrapad":    { "krishna": { "id": "aja", "hi": "अजा एकादशी", "en": "Aja Ekadashi" }, "shukla": { "id": "parivartini", "hi": "परिवर्तिनी एकादशी", "en": "Parivartini Ekadashi" } },
+      "ashwin":       { "krishna": { "id": "indira", "hi": "इंदिरा एकादशी", "en": "Indira Ekadashi" }, "shukla": { "id": "papankusha", "hi": "पापांकुशा एकादशी", "en": "Papankusha Ekadashi" } },
+      "kartik":       { "krishna": { "id": "rama", "hi": "रमा एकादशी", "en": "Rama Ekadashi" }, "shukla": { "id": "devuthani", "hi": "देवउठनी एकादशी", "en": "Devuthani Ekadashi" } },
+      "margashirsha": { "krishna": { "id": "utpanna", "hi": "उत्पन्ना एकादशी", "en": "Utpanna Ekadashi" }, "shukla": { "id": "mokshada", "hi": "मोक्षदा एकादशी", "en": "Mokshada Ekadashi" } },
+      "paush":        { "krishna": { "id": "saphala", "hi": "सफला एकादशी", "en": "Saphala Ekadashi" }, "shukla": { "id": "paush-putrada", "hi": "पौष पुत्रदा एकादशी", "en": "Paush Putrada Ekadashi" } },
+      "magh":         { "krishna": { "id": "shattila", "hi": "षटतिला एकादशी", "en": "Shattila Ekadashi" }, "shukla": { "id": "jaya", "hi": "जया एकादशी", "en": "Jaya Ekadashi" } },
+      "phalgun":      { "krishna": { "id": "vijaya", "hi": "विजया एकादशी", "en": "Vijaya Ekadashi" }, "shukla": { "id": "amalaki", "hi": "आमलकी एकादशी", "en": "Amalaki Ekadashi" } },
+      "adhik":        { "krishna": { "id": "parama", "hi": "परमा एकादशी", "en": "Parama Ekadashi" }, "shukla": { "id": "padmini", "hi": "पद्मिनी एकादशी", "en": "Padmini Ekadashi" } }
+    }
+  }
+}

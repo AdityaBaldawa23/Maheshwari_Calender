@@ -1,0 +1,8 @@
+{
+  "_comment": "Occasions on a fixed Gregorian date every year (MM-DD). Lunar festivals go in <year>.json instead.",
+  "occasions": [
+    { "id": "republic-day", "monthDay": "01-26", "title": { "hi": "गणतंत्र दिवस", "en": "Republic Day" }, "description": { "hi": "भारतीय संविधान लागू होने का राष्ट्रीय पर्व।", "en": "National day marking the adoption of the Constitution of India." }, "category": "national", "importance": "medium", "reminder": { "enabled": true, "defaultTime": "07:00" } },
+    { "id": "independence-day", "monthDay": "08-15", "title": { "hi": "स्वतंत्रता दिवस", "en": "Independence Day" }, "description": { "hi": "भारत की स्वतंत्रता का राष्ट्रीय पर्व।", "en": "National day marking India's independence." }, "category": "national", "importance": "medium", "reminder": { "enabled": true, "defaultTime": "07:00" } },
+    { "id": "gandhi-jayanti", "monthDay": "10-02", "title": { "hi": "गांधी जयंती", "en": "Gandhi Jayanti" }, "description": { "hi": "राष्ट्रपिता महात्मा गांधी की जयंती।", "en": "Birth anniversary of Mahatma Gandhi." }, "category": "national", "importance": "low", "reminder": { "enabled": true, "defaultTime": "07:00" } }
+  ]
+}

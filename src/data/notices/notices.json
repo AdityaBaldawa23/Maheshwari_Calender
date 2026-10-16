@@ -1,0 +1,19 @@
+{
+  "_comment": "Community notices shown on the back page. Optional startDate/endDate (YYYY-MM-DD) limit when a notice is visible.",
+  "notices": [
+    {
+      "id": "notice-about-panchang",
+      "title": { "hi": "पंचांग के बारे में", "en": "About this panchang" },
+      "body": { "hi": "तिथियाँ उज्जैन के सूर्योदय पर आधारित हैं (उदया तिथि) तथा माह पूर्णिमांत पद्धति से दर्शाए गए हैं। स्थानीय परंपरा अनुसार किसी पर्व की तिथि में अंतर संभव है — अपने कुल-पुरोहित से परामर्श अवश्य लें।", "en": "Tithis are based on sunrise at Ujjain (udaya tithi) and months follow the purnimanta system. Local traditions may differ; consult your family priest." },
+      "active": true,
+      "priority": 1
+    },
+    {
+      "id": "notice-community-placeholder",
+      "title": { "hi": "समाज सूचना", "en": "Community notice" },
+      "body": { "hi": "माहेश्वरी समाज की सभाएँ, सम्मेलन एवं महत्वपूर्ण सूचनाएँ यहाँ प्रकाशित की जाएँगी।", "en": "Maheshwari community meetings, conventions and important notices will be published here." },
+      "active": true,
+      "priority": 2
+    }
+  ]
+}

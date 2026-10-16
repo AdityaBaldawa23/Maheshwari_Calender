@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+
+# Android build output / local config (the android/ project itself is committed)
+android/.gradle/
+android/**/build/
+android/local.properties
+android/app/release/
+android/.idea/
+android/captures/
+
+# Release signing material — NEVER commit
+*.jks
+*.keystore
+android/keystore.properties
+release-keys/
