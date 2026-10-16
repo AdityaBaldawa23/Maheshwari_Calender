@@ -111,6 +111,18 @@ export function checkRecurringOccasion(o) {
 
 const SAFE_LINK_TYPES = ['tel', 'https', 'mailto', 'whatsapp'];
 
+/** Bundled image path ("ads/x.webp") or an https URL (admin-published ads). */
+export function isSafeImageRef(value) {
+  if (typeof value !== 'string') return false;
+  if (/^ads\/[\w.-]+\.(webp|png|jpe?g|svg)$/i.test(value)) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password && value.length <= 1000;
+  } catch {
+    return false;
+  }
+}
+
 function checkDateRange(item) {
   const problems = [];
   if (item.startDate !== undefined && !isValidKey(item.startDate)) problems.push(`startDate must be YYYY-MM-DD (got ${item.startDate})`);
@@ -130,8 +142,8 @@ export function checkAdvertisement(ad) {
   problems.push(...checkLocalizedText(ad.sponsor, 'sponsor', { required: false }));
   if (typeof ad.active !== 'boolean') problems.push('active must be true/false');
   if (!Number.isFinite(ad.priority)) problems.push('priority must be a number');
-  if (ad.image !== undefined && (typeof ad.image !== 'string' || !/^ads\/[\w.-]+\.(webp|png|jpe?g|svg)$/i.test(ad.image))) {
-    problems.push(`image must look like "ads/<file>.webp|png|jpg|svg" (got ${ad.image})`);
+  if (ad.image !== undefined && ad.image !== '' && !isSafeImageRef(ad.image)) {
+    problems.push(`image must be "ads/<file>.webp|png|jpg|svg" or an https:// URL (got ${String(ad.image).slice(0, 60)})`);
   }
   if (ad.link !== undefined) {
     if (!isObject(ad.link) || !SAFE_LINK_TYPES.includes(ad.link.type) || !isNonEmptyString(ad.link.value)) {

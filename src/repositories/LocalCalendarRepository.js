@@ -67,6 +67,16 @@ function dedupe(occasions) {
   });
 }
 
+async function safeOverride(getOverride, year) {
+  try {
+    const value = await getOverride(year);
+    return value && Array.isArray(value.occasions) ? value : null;
+  } catch (err) {
+    console.warn('[data] occasion override unavailable', err);
+    return null;
+  }
+}
+
 const isWithinDates = (item, today) =>
   (!item.startDate || item.startDate <= today) && (!item.endDate || item.endDate >= today);
 
@@ -77,6 +87,7 @@ const isWithinDates = (item, today) =>
  * @param {object[]} sources.recurring
  * @param {() => Promise<object>} sources.loadAds
  * @param {() => Promise<object>} sources.loadNotices
+ * @param {(year:number) => Promise<{occasions: object[], verified: boolean}|null>} [sources.getOccasionOverride]
  */
 export function createLocalCalendarRepository(sources) {
   const calendarLoaders = indexLoaders(sources.calendarModules);
@@ -92,13 +103,24 @@ export function createLocalCalendarRepository(sources) {
       if (!loadCalendar) return null;
       try {
         const calendar = await loadCalendar();
+        // Admin-published occasions (cached from the server) replace the bundled
+        // list for that year; otherwise the bundled JSON is used. Tithis always
+        // come from the bundled, generated calendar file.
+        const override = sources.getOccasionOverride ? await safeOverride(sources.getOccasionOverride, year) : null;
         const loadOccasions = occasionLoaders.get(year);
-        const occasionFile = loadOccasions ? await loadOccasions() : { occasions: [] };
+        const bundledFile = loadOccasions ? await loadOccasions() : { occasions: [] };
+        const occasionFile = override ?? bundledFile;
+        const occasionsVerified = override ? override.verified === true : bundledFile.meta?.verified === true;
         const occasions = dedupe([
           ...keepValid(occasionFile.occasions ?? [], (o) => checkOccasion(o, year), 'occasion'),
           ...expandRecurring(sources.recurring ?? [], year),
         ]);
-        return { year, meta: calendar.meta ?? {}, days: normalizeDays(calendar.days, year), occasions };
+        return {
+          year,
+          meta: { ...(calendar.meta ?? {}), occasionsVerified, occasionsSource: override ? 'published' : 'bundled' },
+          days: normalizeDays(calendar.days, year),
+          occasions,
+        };
       } catch (err) {
         console.error(`[data] failed to load year ${year}`, err);
         return null;

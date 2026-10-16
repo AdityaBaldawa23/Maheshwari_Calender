@@ -54,6 +54,7 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
         >
           {num(d)}
         </span>
+        {isToday && <span className="rounded bg-white/20 px-1 text-[0.55rem] leading-4 font-semibold">आज</span>}
         {isMoonDay && (
           <span className="pt-1.5">
             <MoonGlyph paksha={panchang.paksha} onDark={isToday} />
@@ -92,58 +93,59 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
 });
 
 /**
- * Full-height month grid in printed-calendar style (ruled cells, Sunday first).
- * Rows stretch to fill the available height. Swipe left/right to change month.
- * Works without panchang data (plain dates), so it never waits on loading.
+ * Traditional Panchang layout: the seven weekdays run DOWN a column on the far
+ * left (रवि … शनि) and each week is a column, so dates extend to the right
+ * along their weekday row. Cells stretch to fill the available space.
+ * Swipe left/right to change month. Renders plain dates while data loads.
  */
 export function CalendarGrid({ weeks, days, today, selected, onSelect, onPrev, onNext }) {
   const swipe = useSwipe({ onSwipeLeft: onNext, onSwipeRight: onPrev });
-  const lastRow = weeks.length - 1;
+  const columns = weeks.length;
+  const lastCol = columns - 1;
 
   return (
     <div
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-card select-none"
-      style={{ touchAction: 'pan-y' }}
+      role="grid"
+      aria-label="महीने का कैलेंडर"
+      aria-rowcount={7}
+      aria-colcount={columns + 1}
+      className="grid h-full min-h-0 overflow-hidden rounded-xl border border-gold/50 bg-card shadow-[0_1px_3px_rgb(90_50_20/0.08)] select-none"
+      style={{
+        touchAction: 'pan-y',
+        gridTemplateColumns: `2.6rem repeat(${columns}, minmax(0, 1fr))`,
+        gridTemplateRows: 'repeat(7, minmax(0, 1fr))',
+      }}
       {...swipe}
     >
-      <div className="grid shrink-0 grid-cols-7 bg-maroon" aria-hidden="true">
-        {WEEKDAYS.map((w, i) => (
+      {WEEKDAYS.map((w, weekday) => (
+        <div role="row" key={w.en} className="contents">
           <div
-            key={w.en}
-            className={`py-1 text-center text-xs font-semibold ${i === 0 ? 'text-saffron-soft' : 'text-gold-soft'}`}
+            role="rowheader"
+            className={`flex items-center justify-center bg-maroon px-0.5 text-center font-display text-[0.95rem] leading-tight ${
+              weekday === 0 ? 'text-saffron-soft' : 'text-gold-soft'
+            } ${weekday < 6 ? 'border-b border-maroon-dark' : ''}`}
           >
             {txt(w.short)}
           </div>
-        ))}
-      </div>
-
-      <div
-        role="grid"
-        aria-label="महीने का कैलेंडर"
-        className="grid min-h-0 flex-1"
-        style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(0, 1fr))` }}
-      >
-        {weeks.map((week, wi) => (
-          <div role="row" key={wi} className="grid min-h-0 grid-cols-7">
-            {week.map((key, di) => {
-              const borders = `${di < 6 ? 'border-r' : ''} ${wi < lastRow ? 'border-b' : ''} border-line`;
-              return key ? (
-                <div role="gridcell" key={key} className={`min-h-0 min-w-0 ${borders}`}>
-                  <DayCell
-                    dateKey={key}
-                    info={days?.[key]}
-                    isToday={key === today}
-                    isSelected={key === selected}
-                    onSelect={onSelect}
-                  />
-                </div>
-              ) : (
-                <div role="gridcell" key={`pad-${wi}-${di}`} aria-hidden="true" className={`bg-paper/70 ${borders}`} />
-              );
-            })}
-          </div>
-        ))}
-      </div>
+          {weeks.map((week, wi) => {
+            const key = week[weekday];
+            const borders = `${wi < lastCol ? 'border-r' : ''} ${weekday < 6 ? 'border-b' : ''} border-line`;
+            return key ? (
+              <div role="gridcell" key={key} className={`min-h-0 min-w-0 ${borders}`}>
+                <DayCell
+                  dateKey={key}
+                  info={days?.[key]}
+                  isToday={key === today}
+                  isSelected={key === selected}
+                  onSelect={onSelect}
+                />
+              </div>
+            ) : (
+              <div role="gridcell" key={`pad-${weekday}-${wi}`} aria-hidden="true" className={`bg-paper/70 ${borders}`} />
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }

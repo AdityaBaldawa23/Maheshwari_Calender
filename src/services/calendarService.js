@@ -19,6 +19,8 @@ function samvatFor(meta, key) {
 
 export function createCalendarService(repository) {
   const yearCache = new Map(); // year -> Promise<{ data, occasionsByDate }>
+  let revision = 0; // bumps when cached data is invalidated, so views re-read
+  const listeners = new Set();
 
   function loadYear(year) {
     if (!yearCache.has(year)) {
@@ -53,6 +55,11 @@ export function createCalendarService(repository) {
       samvat: loaded ? samvatFor(loaded.data.meta, key) : null,
       /** Reference location for sunrise/sunset ({hi, en}), if the data provides one. */
       location: loaded?.data.meta?.location?.name ?? null,
+      /** Verification state, shown honestly in the UI: generated data is not "confirmed". */
+      verified: {
+        panchang: loaded?.data.meta?.verified === true,
+        occasions: loaded?.data.meta?.occasionsVerified === true,
+      },
       hasData: day !== null,
     };
   }
@@ -65,6 +72,21 @@ export function createCalendarService(repository) {
 
   return {
     getAvailableYears: () => repository.getAvailableYears(),
+
+    /** Drops cached years (e.g. after admin-published occasions were downloaded). */
+    invalidate(years) {
+      if (!years) yearCache.clear();
+      else years.forEach((y) => yearCache.delete(y));
+      revision++;
+      listeners.forEach((l) => l());
+    },
+
+    getRevision: () => revision,
+
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
 
     /** Everything needed to render one month. Works (without panchang) even for years with no data. */
     async getCalendarForMonth(y, m) {

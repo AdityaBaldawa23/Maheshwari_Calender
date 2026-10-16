@@ -28,6 +28,30 @@ export const CalendarIcon = (p) => (
     <path d="M3 9h18M8 2v4M16 2v4" />
   </svg>
 );
+export const UsersIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+export const SirenIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M7 18v-6a5 5 0 1 1 10 0v6" />
+    <path d="M5 21a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1zM21 12h1M18.5 4.5 18 5M2 12h1M12 2v1M4.93 4.93l.71.71" />
+  </svg>
+);
+export const MenuIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+export const MapPinIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
 export const ListIcon = (p) => (
   <svg {...base} {...p}>
     <path d="M9 6h12M9 12h12M9 18h12" />

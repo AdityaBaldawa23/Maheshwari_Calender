@@ -131,7 +131,7 @@ export function validateAdsFile(data, imageExists) {
     r.errors.push(...prefix(where, checkAdvertisement(ad)));
     if (ids.has(ad?.id)) r.errors.push(`${where}: duplicate id`);
     ids.add(ad?.id);
-    if (typeof ad?.image === 'string' && !imageExists(ad.image)) r.errors.push(`${where}: image public/${ad.image} not found`);
+    if (typeof ad?.image === 'string' && ad.image.startsWith('ads/') && !imageExists(ad.image)) r.errors.push(`${where}: image public/${ad.image} not found`);
   });
   return r;
 }

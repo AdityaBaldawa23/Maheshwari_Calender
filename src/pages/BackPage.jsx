@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { calendarRepository } from '../repositories/index.js';
 import { txt } from '../utils/format.js';
 import { AdCard } from '../components/AdCard.jsx';
-import { FlipIcon } from '../components/Icons.jsx';
+import { useDataset } from '../hooks/useSync.js';
 
 /**
  * BACK page — community notices and advertisements. Layout is intentionally
  * simple (a list of cards) so the final design can be swapped in later; all
  * content comes from src/data/notices and src/data/advertisements.
  */
-export function BackPage({ today, onFlip }) {
+export function BackPage({ today }) {
   const [content, setContent] = useState(null);
+  const contentVersion = useDataset('content').snapshot?.meta?.version; // reload when new content is published
 
   useEffect(() => {
     let cancelled = false;
@@ -20,12 +21,13 @@ export function BackPage({ today, onFlip }) {
     return () => {
       cancelled = true;
     };
-  }, [today]);
+  }, [today, contentVersion]);
 
   return (
     <div className="space-y-3">
       <h2 className="px-1 font-display text-2xl text-maroon">समाज सूचना एवं विज्ञापन</h2>
 
+      {content?.notices.length > 0 && <p className="px-1 text-xs font-semibold tracking-wide text-muted">सूचनाएँ</p>}
       {content?.notices.map((n) => (
         <article key={n.id} className="card border-l-4 border-l-saffron p-3">
           <h3 className="font-display text-lg leading-snug text-maroon">{txt(n.title)}</h3>
@@ -46,13 +48,6 @@ export function BackPage({ today, onFlip }) {
         <p className="card p-4 text-sm text-muted">अभी कोई सूचना नहीं है।</p>
       )}
 
-      <button
-        type="button"
-        onClick={onFlip}
-        className="card flex w-full items-center justify-center gap-2 p-3 font-semibold text-maroon"
-      >
-        <FlipIcon width={20} height={20} className="-scale-x-100" /> पृष्ठ पलटें — पंचांग
-      </button>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { CalendarGrid } from '../components/CalendarGrid.jsx';
 import { MonthNavigator } from '../components/MonthNavigator.jsx';
 
 /** FRONT page: the month grid fills the whole screen between header and tabs. */
-export function CalendarPage({ today, month, selected, onSelectDate, onChangeMonth, onGoToday, isCurrentMonth }) {
+export function CalendarPage({ today, month, selected, onSelectDate, onChangeMonth, onGoToday, isCurrentMonth, onPickMonth }) {
   const monthData = useMonthData(month.y, month.m);
   // Grid structure never waits for data.
   const weeks = monthData?.weeks ?? buildMonthGrid(month.y, month.m);
@@ -20,6 +20,7 @@ export function CalendarPage({ today, month, selected, onSelectDate, onChangeMon
         onPrev={() => onChangeMonth(-1)}
         onNext={() => onChangeMonth(1)}
         onToday={onGoToday}
+        onPick={onPickMonth}
       />
       <div className="min-h-0 flex-1">
         <CalendarGrid

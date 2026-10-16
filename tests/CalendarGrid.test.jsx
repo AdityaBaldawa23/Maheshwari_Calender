@@ -41,6 +41,25 @@ function renderJune({ selected = null, onSelect = vi.fn(), onPrev = vi.fn(), onN
 }
 
 describe('CalendarGrid', () => {
+  it('lists the seven weekdays vertically down the left, Sunday first', () => {
+    renderJune();
+    const headers = screen.getAllByRole('rowheader').map((h) => h.textContent);
+    expect(headers).toEqual(['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि']);
+    expect(screen.getAllByRole('row')).toHaveLength(7);
+  });
+
+  it('places each date in the row of its weekday, weeks extending to the right', () => {
+    renderJune();
+    const rows = screen.getAllByRole('row');
+    const datesIn = (row) =>
+      [...row.querySelectorAll('[role="gridcell"] button')].map((b) => b.getAttribute('aria-label').match(/^(?:आज, )?([०-९]+) जून/)[1]);
+    // June 2027: 1st is a Tuesday (मंगल), 6th the first Sunday, 30th a Wednesday.
+    expect(datesIn(rows[2])).toEqual(['१', '८', '१५', '२२', '२९']);
+    expect(datesIn(rows[0])).toEqual(['६', '१३', '२०', '२७']);
+    expect(datesIn(rows[3])).toEqual(['२', '९', '१६', '२३', '३०']);
+    expect(rows[0].firstElementChild.getAttribute('role')).toBe('rowheader');
+  });
+
   it('renders every day of the month as a button', () => {
     renderJune();
     expect(screen.getAllByRole('button')).toHaveLength(30);
@@ -76,7 +95,7 @@ describe('CalendarGrid', () => {
 
   it('changes month on horizontal swipe but not on vertical scroll', () => {
     const { onPrev, onNext } = renderJune();
-    const grid = screen.getByRole('grid').parentElement;
+    const grid = screen.getByRole('grid');
     fireEvent.pointerDown(grid, { clientX: 300, clientY: 200 });
     fireEvent.pointerUp(grid, { clientX: 150, clientY: 210 });
     expect(onNext).toHaveBeenCalledTimes(1);

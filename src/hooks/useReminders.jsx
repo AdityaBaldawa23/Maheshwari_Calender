@@ -3,6 +3,7 @@ import { notificationService } from '../services/notificationService.js';
 import { reminderService } from '../services/reminderService.js';
 import { useSettings } from './useSettings.jsx';
 import { useOnResume } from './useAppLifecycle.js';
+import { useCalendarRevision } from './useCalendarData.js';
 
 const RemindersContext = createContext(null);
 
@@ -37,10 +38,12 @@ export function RemindersProvider({ children }) {
     refreshPermission();
   }, [refreshPermission]);
 
-  // Re-plan whenever relevant settings change.
+  // Re-plan whenever settings change or calendar occasions were updated from the server.
+  // Deterministic notification IDs make this a reconciliation: only changed reminders are touched.
+  const calendarRevision = useCalendarRevision();
   useEffect(() => {
     if (ready) sync();
-  }, [ready, sync]);
+  }, [ready, sync, calendarRevision]);
 
   // Coming back to the app: permission may have changed in system settings,
   // and the scheduling window needs to roll forward.

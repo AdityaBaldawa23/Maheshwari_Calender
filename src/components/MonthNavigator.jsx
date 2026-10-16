@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from './Icons.jsx';
+import { MonthPicker } from './MonthPicker.jsx';
 import { lunarMonthsLabel, monthYearLabel, samvatLabel } from '../utils/format.js';
 
 /** Compact one-row month switcher: ‹ अक्टूबर २०२६ › [आज]. */
-export function MonthNavigator({ y, m, monthData, isCurrentMonth, onPrev, onNext, onToday }) {
+export function MonthNavigator({ y, m, monthData, isCurrentMonth, onPrev, onNext, onToday, onPick }) {
+  const [picking, setPicking] = useState(false);
   const lunar = monthData ? lunarMonthsLabel(monthData.lunarMonths) : '';
   const samvat = monthData ? samvatLabel(monthData.samvats) : '';
 
@@ -18,7 +21,20 @@ export function MonthNavigator({ y, m, monthData, isCurrentMonth, onPrev, onNext
       </button>
 
       <div className="min-w-0 flex-1 text-center" aria-live="polite">
-        <h2 className="font-display text-xl leading-snug text-maroon">{monthYearLabel(y, m)}</h2>
+        <h2 className="font-display text-xl leading-snug text-maroon">
+          {onPick ? (
+            <button
+              type="button"
+              onClick={() => setPicking(true)}
+              aria-label={`${monthYearLabel(y, m)} — महीना या वर्ष बदलें`}
+              className="rounded-lg px-2 underline decoration-gold/60 decoration-dotted underline-offset-4"
+            >
+              {monthYearLabel(y, m)}
+            </button>
+          ) : (
+            monthYearLabel(y, m)
+          )}
+        </h2>
         <p className="min-h-4 truncate text-[0.7rem] leading-tight text-muted">
           {[lunar, samvat].filter(Boolean).join(' · ')}
         </p>
@@ -43,6 +59,7 @@ export function MonthNavigator({ y, m, monthData, isCurrentMonth, onPrev, onNext
           आज
         </button>
       )}
+      {picking && <MonthPicker y={y} m={m} onPick={onPick} onClose={() => setPicking(false)} />}
     </div>
   );
 }

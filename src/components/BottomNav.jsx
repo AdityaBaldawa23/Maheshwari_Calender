@@ -1,11 +1,12 @@
-import { BellIcon, CalendarIcon, ListIcon, MegaphoneIcon } from './Icons.jsx';
+import { CalendarIcon, ListIcon, MenuIcon, SirenIcon, UsersIcon } from './Icons.jsx';
 import { VIEW_ORDER } from '../constants/views.js';
 
 const ITEMS = {
   calendar: { label: 'पंचांग', Icon: CalendarIcon },
   occasions: { label: 'अवसर', Icon: ListIcon },
-  back: { label: 'समाज', Icon: MegaphoneIcon },
-  settings: { label: 'स्मरण', Icon: BellIcon },
+  directory: { label: 'परिवार', Icon: UsersIcon },
+  emergency: { label: 'आपातकाल', Icon: SirenIcon },
+  more: { label: 'अधिक', Icon: MenuIcon },
 };
 
 export function BottomNav({ view, onChange }) {
@@ -21,11 +22,11 @@ export function BottomNav({ view, onChange }) {
                 type="button"
                 onClick={() => onChange(id)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium ${
+                className={`flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-0.5 text-[0.7rem] font-medium whitespace-nowrap ${
                   active ? 'text-maroon' : 'text-muted'
                 }`}
               >
-                <span className={`grid h-7 w-12 place-items-center rounded-full ${active ? 'bg-gold-soft' : ''}`}>
+                <span className={`grid h-7 w-11 place-items-center rounded-full ${active ? 'bg-gold-soft' : ''}`}>
                   <Icon width={20} height={20} />
                 </span>
                 <span className={active ? 'font-semibold' : ''}>{label}</span>

@@ -1,0 +1,57 @@
+{
+  "_comment": "Bundled emergency-service numbers, available offline from first launch. Admins can override them via the portal (published/emergency). The verification block records what was checked and when — the owner MUST confirm these with official Maharashtra / Sangli district sources before release and then set status to 'verified'.",
+  "services": [
+    {
+      "id": "police",
+      "name": "पुलिस",
+      "phone": "112",
+      "altPhone": "100",
+      "jurisdiction": "भारत (राष्ट्रीय आपातकालीन नंबर 112; पुलिस 100)",
+      "active": true,
+      "verification": {
+        "status": "needs-confirmation",
+        "checkedOn": "2026-10-16",
+        "note": "112 is India's integrated Emergency Response Support System number; 100 is the legacy police number being integrated into 112. Official 112.gov.in could not be reached during the check; confirmed only via state police pages.",
+        "sources": [
+          "https://112.gov.in/about",
+          "https://wayanad.keralapolice.gov.in/page/erss",
+          "https://nagpurgraminpolice.gov.in/en/maharashtra_right_to_service_act"
+        ]
+      }
+    },
+    {
+      "id": "ambulance",
+      "name": "एम्बुलेंस",
+      "phone": "108",
+      "altPhone": "112",
+      "jurisdiction": "महाराष्ट्र (MEMS 108)",
+      "active": true,
+      "verification": {
+        "status": "needs-confirmation",
+        "checkedOn": "2026-10-16",
+        "note": "108 is the Maharashtra Emergency Medical Services (MEMS) ambulance number per state police and news sources; 112 also routes medical emergencies.",
+        "sources": [
+          "https://nagpurgraminpolice.gov.in/en/maharashtra_right_to_service_act",
+          "https://medicaldialogues.in/maharashtra-government-to-totally-fund-phone-an-ambulance-service"
+        ]
+      }
+    },
+    {
+      "id": "fire",
+      "name": "अग्निशमन (फायर ब्रिगेड)",
+      "phone": "101",
+      "altPhone": "112",
+      "jurisdiction": "भारत",
+      "active": true,
+      "verification": {
+        "status": "needs-confirmation",
+        "checkedOn": "2026-10-16",
+        "note": "101 is the legacy fire & rescue number listed by MHA-linked ERSS references as being integrated into 112.",
+        "sources": [
+          "https://112.gov.in/about",
+          "https://wayanad.keralapolice.gov.in/page/erss"
+        ]
+      }
+    }
+  ]
+}

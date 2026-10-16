@@ -57,7 +57,7 @@ function OccasionEvent({ occasion }) {
 }
 
 /** "अवसर" tab — all occasions of the month, plus Purnima/Amavasya with start and end times. */
-export function OccasionsPage({ month, onChangeMonth, onGoToday, isCurrentMonth, onSelectDate }) {
+export function OccasionsPage({ month, onChangeMonth, onGoToday, isCurrentMonth, onPickMonth, onSelectDate }) {
   const monthData = useMonthData(month.y, month.m);
   const groups = groupByDate(buildMonthEvents(monthData));
 
@@ -71,6 +71,7 @@ export function OccasionsPage({ month, onChangeMonth, onGoToday, isCurrentMonth,
         onPrev={() => onChangeMonth(-1)}
         onNext={() => onChangeMonth(1)}
         onToday={onGoToday}
+        onPick={onPickMonth}
       />
       <ReminderPromo />
 

@@ -165,6 +165,13 @@ export function DayDetailSheet({ dateKey, today, onClose, onNavigate }) {
           </section>
         )}
 
+        {info?.hasData && (!info.verified?.panchang || (info.occasions.length > 0 && !info.verified?.occasions)) && (
+          <p className="mt-2 rounded-xl border border-dashed border-gold/60 px-3 py-2 text-xs leading-relaxed text-muted">
+            ⓘ {!info.verified?.panchang ? 'तिथि खगोलीय गणना पर आधारित है' : 'पर्व तिथियाँ'} — आधिकारिक सत्यापन लंबित। स्थानीय परंपरा
+            अनुसार अंतर संभव है।
+          </p>
+        )}
+
         {info && (
           <section className="mt-4" aria-labelledby="day-occasions-title">
             <h3 id="day-occasions-title" className="font-display text-lg text-maroon">
