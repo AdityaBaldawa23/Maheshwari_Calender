@@ -19,3 +19,12 @@ android/captures/
 *.keystore
 android/keystore.properties
 release-keys/
+
+# Firebase / env
+.env.local
+.env.*.local
+.firebaserc
+.firebase/
+dist-admin/
+firebase-debug.log
+firestore-debug.log

@@ -67,15 +67,19 @@ e.g. with `npx @capacitor/assets generate` from a 1024 px PNG export.
 
 **Privacy policy:** host `docs/PRIVACY_POLICY.md` (filled in) at a public URL.
 
-**Data safety form** — answers that match the code:
+**Data safety form** — answers that match the V2 code (re-check if features change):
 
 | Question | Answer |
 | --- | --- |
-| Does your app collect or share any of the required user data types? | **No** |
-| Is all user data encrypted in transit? | Not applicable (no data transmitted) |
-| Do you provide a way for users to request data deletion? | Not applicable (no data collected); uninstalling removes local settings |
+| Does your app collect or share any of the required user data types? | **No.** The app collects nothing from its users: no account, no analytics, no identifiers. It only *downloads* published content. |
+| Is all user data encrypted in transit? | Yes — all downloads use HTTPS (Firestore REST). |
+| Do you provide a way for users to request data deletion? | Not applicable for app-user data. Directory entries are corrected/removed by the organisation on request (see privacy policy). |
 
-(Settings stored only on the device are not "collected" under Play's definition.)
+The directory shows **personal information about community members** (names, phone numbers, dates of birth, blood
+groups). This is not data collected from app users. Google Play's *User Data* / *Personal and Sensitive Information*
+policies still require that it is published with permission and that the privacy policy explains it (done in
+PRIVACY_POLICY.md). Keep the consent records described in V2_DATA_POLICY.md; reviewers may ask about them.
+Admin sign-in happens only in the separate web portal, not in the app.
 
 **Ads declaration:** "Does your app contain ads?" — **Yes** once real sponsor ads are on the back
 page (they are static, bundled content, no ad SDK). While only the placeholders exist, answer No.
@@ -88,7 +92,7 @@ location, and digital purchases. Expected rating: Everyone / 3+.
 
 **Government app:** No. **Financial features:** None. **Health:** None.
 
-**Permissions:** Notifications (POST_NOTIFICATIONS) — used only for local festival reminders.
+**Permissions:** Notifications (POST_NOTIFICATIONS) for local festival reminders; INTERNET for downloading published content.
 No exact-alarm, location, camera, contacts, storage or microphone permissions.
 
 ## Pre-launch checklist

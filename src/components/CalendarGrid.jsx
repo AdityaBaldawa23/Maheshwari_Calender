@@ -46,7 +46,7 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
         isSelected && !isToday ? 'shadow-[inset_0_0_0_2px_var(--color-gold)]' : ''
       }`}
     >
-      <span className="flex items-start justify-between gap-0.5">
+      <span className="flex shrink-0 items-start justify-between gap-0.5">
         <span
           className={`font-display text-[1.35rem] leading-tight ${
             isToday ? 'text-white' : weekday === 0 ? 'text-sunday' : 'text-ink'
@@ -64,7 +64,7 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
 
       {panchang && (
         <span
-          className={`line-clamp-2 text-[0.62rem] max-[359px]:text-[0.56rem] [overflow-wrap:anywhere] leading-tight ${
+          className={`line-clamp-2 shrink-0 text-[0.62rem] max-[359px]:text-[0.56rem] [overflow-wrap:anywhere] leading-tight ${
             isToday ? 'text-white/90' : isMoonDay ? 'font-semibold text-ink' : 'text-muted'
           }`}
         >
@@ -73,9 +73,9 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
       )}
 
       {occasions.length > 0 && (
-        <span className="mt-auto flex min-w-0 flex-col gap-px">
+        <span className="mt-auto flex min-h-0 min-w-0 flex-col gap-px overflow-hidden">
           <span
-            className={`line-clamp-2 text-[0.62rem] max-[359px]:text-[0.56rem] [overflow-wrap:anywhere] leading-[1.2] font-semibold ${
+            className={`line-clamp-2 max-[359px]:line-clamp-1 text-[0.62rem] max-[359px]:text-[0.56rem] [overflow-wrap:anywhere] leading-[1.2] font-semibold ${
               isToday ? 'text-gold-soft' : (CATEGORY_TEXT[occasions[0].category] ?? 'text-ink')
             }`}
           >

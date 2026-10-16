@@ -1,5 +1,10 @@
 # Calendar Data Guide
 
+> **V2:** occasions, ads, notices and emergency contacts can now also be edited in the **admin portal** and published
+> without an app update ([V2_ADMIN.md](V2_ADMIN.md)). Published occasions replace the bundled list for that year.
+> This guide covers the **bundled** data (the offline fallback and the source of all tithi/panchang values),
+> which still changes only through an app release.
+
 Everything the app shows comes from plain JSON files in `src/data/`. You can edit them with any text
 editor (VS Code recommended — it highlights mistakes). After **every** change run:
 

@@ -17,7 +17,11 @@
     "validate-data": "node scripts/validate-data.mjs",
     "generate-panchang": "node scripts/generate-panchang.mjs",
     "cap:sync": "npm run build && cap sync android",
-    "cap:open": "cap open android"
+    "cap:open": "cap open android",
+    "test:rules": "npx -y firebase-tools@15.34.0 emulators:exec --only firestore --project demo-mdc \"vitest run --config vitest.rules.config.js\"",
+    "admin:dev": "vite --config admin/vite.config.js",
+    "admin:build": "vite build --config admin/vite.config.js",
+    "admin:deploy": "npm run admin:build && npx -y firebase-tools@15.34.0 deploy --only hosting,firestore"
   },
   "dependencies": {
     "@capacitor/android": "7.6.9",

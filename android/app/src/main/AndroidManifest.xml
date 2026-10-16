@@ -39,9 +39,11 @@
 
     <!--
       Permissions (minimal):
-        - INTERNET: kept because the Capacitor WebView serves the bundled app from
-          https://localhost. The app makes NO network requests — the production
-          Content-Security-Policy only allows 'self'. (Normal permission, no user prompt.)
+        - INTERNET: read-only download of PUBLISHED data (directory, emergency contacts,
+          notices/ads, occasions) from Firestore. The production Content-Security-Policy
+          allows only https://firestore.googleapis.com (+ https ad images). The calendar
+          itself works fully offline. (Normal permission, no user prompt.)
+        - No storage permission: cached data lives in app-private internal storage.
         - POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED, WAKE_LOCK: added by
           @capacitor/local-notifications for offline reminders (re-armed after reboot).
         - SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM: explicitly removed (Play-restricted;

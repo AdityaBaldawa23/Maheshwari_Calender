@@ -4,9 +4,9 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
-  { ignores: ['dist', 'android', 'coverage', 'node_modules'] },
+  { ignores: ['dist', 'dist-admin', 'android', 'coverage', 'node_modules'] },
   {
-    files: ['src/**/*.{js,jsx}', 'tests/**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx}', 'tests/**/*.{js,jsx}', 'admin/src/**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -21,12 +21,17 @@ export default [
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^(_|[A-Z])' }],
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true, allowExportNames: ['useSettings', 'useReminders'] },
+        { allowConstantExport: true, allowExportNames: ['useSettings', 'useReminders', 'useAuth', 'downloadText', 'inputClass'] },
       ],
     },
   },
   {
-    files: ['scripts/**/*.mjs', '*.config.js', 'tests/**/*.js'],
+    // Entry files render the app; they are not hot-reloaded modules.
+    files: ['src/main.jsx', 'admin/src/main.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    files: ['scripts/**/*.mjs', '*.config.js', 'tests/**/*.js', 'rules-tests/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

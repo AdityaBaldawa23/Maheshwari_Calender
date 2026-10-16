@@ -19,6 +19,10 @@ reset the upload key.
 
 ## Every release
 
+0. **Environment** — `.env.local` must contain the production `VITE_FIREBASE_PROJECT_ID` and `VITE_FIREBASE_API_KEY`
+   (see [V2_ADMIN.md](V2_ADMIN.md)); otherwise the app builds without directory/emergency/content sync.
+   Run `npm run test:rules` and deploy rules (`npm run admin:deploy`) before shipping an app that depends on them.
+
 1. **Update calendar data** — see [DATA_GUIDE.md](DATA_GUIDE.md). Verify against a trusted panchang and
    set `"verified": true`.
 2. **Validate** — `npm run validate-data -- --strict` (no errors, no warnings).
@@ -58,12 +62,26 @@ reset the upload key.
 - Release builds are unsigned unless `android/keystore.properties` exists.
 - Target SDK 36 / compile SDK 36 (Android 16); min SDK 23 (Android 6). Edge-to-edge is handled by
   `android.adjustMarginsForEdgeToEdge: "force"` in `capacitor.config.json`.
-- Android permissions in the merged manifest: `INTERNET` (WebView serving local files; the app makes
-  no network requests), `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`. Exact-alarm
-  permissions are explicitly removed.
+- Android permissions in the merged manifest: `INTERNET` (read-only download of published Firestore
+  data; CSP allows only firestore.googleapis.com + https ad images), `POST_NOTIFICATIONS`,
+  `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`. Exact-alarm and storage permissions are not requested.
 - App ID `com.maheshwaricalendar.app` **cannot change after the first Play upload**. Change it in
   `capacitor.config.json`, `android/app/build.gradle` (`applicationId`, `namespace`) and the Java
   package folder *before* the first upload if a different ID is wanted.
+
+## iOS (Apple App Store) — requires a Mac
+
+Not set up in this repository (it cannot be built or verified on Windows). On macOS with Xcode 16+:
+
+```bash
+npm i -E @capacitor/ios@7.6.9
+npx cap add ios && npm run build && npx cap sync ios && npx cap open ios
+```
+
+Then in Xcode: set the bundle ID (`com.maheshwaricalendar.app`), team/signing, app icon (from `resources/`), and
+display name; Local Notifications needs no extra entitlement for local reminders. Test on a device (airplane mode
+too), then archive and upload with Xcode → Organizer. App Store review will ask about the public directory. Reuse
+the privacy text and consent policy.
 
 ## Upgrading later
 

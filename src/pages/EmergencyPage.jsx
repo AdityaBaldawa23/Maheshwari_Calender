@@ -30,7 +30,7 @@ function ServiceCard({ service }) {
     <li className="card flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
       <div className="min-w-0 flex-1">
         <p className="font-display text-xl leading-snug text-maroon">{service.name}</p>
-        {service.jurisdiction && <p className="text-xs text-muted">{service.jurisdiction}</p>}
+        {service.jurisdiction && <p className="text-xs text-muted">{num(service.jurisdiction)}</p>}
       </div>
       <div className="flex flex-wrap gap-2">
         <CallLink number={service.phone} label={service.name} primary />
@@ -122,7 +122,7 @@ export function EmergencyPage() {
         </ul>
         {unconfirmed && (
           <p className="px-1 text-xs leading-relaxed text-muted">
-            ये राष्ट्रीय/राज्य आपातकालीन नंबर हैं (112 सभी आपात स्थितियों के लिए)। स्थानीय आधिकारिक पुष्टि लंबित।
+            ये राष्ट्रीय/राज्य आपातकालीन नंबर हैं (११२ सभी आपात स्थितियों के लिए)। स्थानीय आधिकारिक पुष्टि लंबित।
           </p>
         )}
       </section>

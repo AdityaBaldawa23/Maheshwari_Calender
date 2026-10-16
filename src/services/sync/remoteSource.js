@@ -14,9 +14,9 @@ export class RemoteError extends Error {
   }
 }
 
-export function createRemoteSource({ projectId, apiKey, fetchImpl = (...a) => fetch(...a) }) {
+export function createRemoteSource({ projectId, apiKey, emulatorHost = '', fetchImpl = (...a) => fetch(...a) }) {
   const root = `projects/${projectId}/databases/(default)/documents`;
-  const base = `https://firestore.googleapis.com/v1/${root}`;
+  const base = emulatorHost ? `http://${emulatorHost}/v1/${root}` : `https://firestore.googleapis.com/v1/${root}`;
   const keyParam = apiKey ? `key=${encodeURIComponent(apiKey)}` : '';
 
   async function request(url, init) {
