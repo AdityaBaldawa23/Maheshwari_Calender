@@ -19,8 +19,8 @@
 import { fnv1a } from '../hash.js';
 import { ageOn } from '../directorySchema.js';
 import {
-  cleanText, isBlank, isDevanagari, looksLikeFormula, normalizeAge, normalizeBloodGroup, normalizeDate,
-  normalizeMemberId, normalizePhone, normalizeText,
+  cleanText, isBlank, isDevanagari, isPlaceholder, looksLikeFormula, normalizeAge, normalizeBloodGroup, normalizeDate,
+  normalizeMemberId, normalizePhone, normalizeText, titleCaseIfAllCaps,
 } from './normalize.js';
 
 /** Fields of the admin master record that an import can set. */
@@ -29,6 +29,8 @@ export const IMPORTABLE_FIELDS = [
 ];
 
 const TEXT_LIMITS = { nameHi: 100, nameEn: 100, fatherName: 100, motherName: 100, city: 100, publicNote: 300, adminNote: 500 };
+/** Fields whose ALL-CAPS English values ("ADITYA ANAND MALU") are stored in Title Case. */
+const TITLE_CASE_FIELDS = new Set(['nameEn', 'fatherName', 'motherName', 'city']);
 
 /** Normalised text used to compare names (case/space/punctuation-insensitive). */
 export const matchKey = (s) => cleanText(s).toLowerCase().replace(/[.,'’]/g, '').replace(/\s+/g, ' ');
@@ -52,7 +54,7 @@ export function parseRow(cells, mapping, { today }) {
   for (const [indexText, target] of Object.entries(mapping)) {
     if (!target) continue;
     const raw = readCell(cells, Number(indexText));
-    if (isBlank(raw)) continue;
+    if (isBlank(raw) || isPlaceholder(raw)) continue; // "N/A", "-", "नहीं" … = no value
     if (typeof raw === 'object' && !(raw instanceof Date)) {
       errors.push({ field: target, message: 'असमर्थित सेल प्रकार — unsupported cell type' });
       continue;
@@ -68,7 +70,10 @@ export function parseRow(cells, mapping, { today }) {
       case 'name': {
         const r = normalizeText(value, TEXT_LIMITS.nameHi);
         if (r.error) errors.push({ field: 'name', message: r.error });
-        else if (r.value) record[isDevanagari(r.value) ? '_autoNameHi' : '_autoNameEn'] = r.value;
+        else if (r.value) {
+          if (isDevanagari(r.value)) record._autoNameHi = r.value;
+          else record._autoNameEn = titleCaseIfAllCaps(r.value);
+        }
         break;
       }
       case 'dob':
@@ -87,7 +92,10 @@ export function parseRow(cells, mapping, { today }) {
         set('phone', normalizePhone(value));
         break;
       default:
-        if (TEXT_LIMITS[target]) set(target, normalizeText(value, TEXT_LIMITS[target]));
+        if (TEXT_LIMITS[target]) {
+          const r = normalizeText(value, TEXT_LIMITS[target]);
+          set(target, TITLE_CASE_FIELDS.has(target) && r.value ? { value: titleCaseIfAllCaps(r.value) } : r);
+        }
     }
   }
 
@@ -115,13 +123,21 @@ const identityKeys = (r) => {
   if (!name) return [];
   const keys = [];
   if (r.dob) keys.push(`${name}|dob:${r.dob}`);
+  if (r.phone) keys.push(`${name}|phone:${r.phone}`);
   if (r.fatherName) keys.push(`${name}|father:${matchKey(r.fatherName)}`);
   return keys;
 };
 
-function generatedId(fingerprint, rowNumber, taken) {
-  let id = `M${fnv1a(`${fingerprint}:${rowNumber}`).toUpperCase()}`;
-  for (let n = 2; taken.has(id); n++) id = `M${fnv1a(`${fingerprint}:${rowNumber}:${n}`).toUpperCase()}`;
+/**
+ * Member ID for a new row without one. Derived from the person's identity
+ * (name + birth date, else name + mobile, else name + father) so that the SAME
+ * person gets the SAME ID when an updated copy of the sheet is uploaded again.
+ * Rows with no identifying detail fall back to file fingerprint + row number.
+ */
+function generatedId(record, fingerprint, rowNumber, taken) {
+  const basis = identityKeys(record)[0] ?? `${fingerprint}:${rowNumber}`;
+  let id = `M${fnv1a(basis).toUpperCase()}`;
+  for (let n = 2; taken.has(id); n++) id = `M${fnv1a(`${basis}#${n}`).toUpperCase()}`;
   taken.add(id);
   return id;
 }
@@ -134,12 +150,16 @@ const sameValue = (a, b) => (a ?? '') === (b ?? '');
  * @param {Record<number,string|null>} input.mapping  column index → target
  * @param {Map<string,object>} input.existing         member id → existing master record
  * @param {'create'|'update'} input.mode
- * @param {{allowCreate?:boolean, clearBlank?:boolean}} [input.options]
+ * @param {{allowCreate?:boolean, clearBlank?:boolean, matchByIdentity?:boolean, defaultCity?:string}} [input.options]
+ *   matchByIdentity: in update mode, rows WITHOUT a member ID are matched to an existing
+ *     record by name + birth date (or name + mobile / father) — only if exactly one record matches.
+ *   defaultCity: city for new rows that have none (e.g. a sheet without a city column).
  * @param {string} input.fingerprint                   stable hash of the uploaded file
  * @param {string} input.today                         "YYYY-MM-DD"
  */
 export function buildImportPlan({ dataRows, mapping, existing, mode, options = {}, fingerprint, today }) {
-  const { allowCreate = false, clearBlank = false } = options;
+  const { allowCreate = false, clearBlank = false, matchByIdentity = false } = options;
+  const defaultCity = cleanText(options.defaultCity ?? '').slice(0, TEXT_LIMITS.city);
   const parsed = dataRows.map(({ rowNumber, cells }) => ({ rowNumber, ...parseRow(cells, mapping, { today }) }));
 
   // Duplicate member IDs inside the file: every such row is invalid.
@@ -155,10 +175,18 @@ export function buildImportPlan({ dataRows, mapping, existing, mode, options = {
   }
 
   // Index existing records by identity (name + DOB / name + father) for duplicate detection.
-  const existingByIdentity = new Map();
+  const existingByIdentity = new Map(); // identity key → Set of member ids
   for (const rec of existing.values()) {
-    for (const key of identityKeys(rec)) existingByIdentity.set(key, rec.id);
+    for (const key of identityKeys(rec)) {
+      if (!existingByIdentity.has(key)) existingByIdentity.set(key, new Set());
+      existingByIdentity.get(key).add(rec.id);
+    }
   }
+  const identityMatches = (record) => {
+    const ids = new Set();
+    for (const key of identityKeys(record)) existingByIdentity.get(key)?.forEach((id) => ids.add(id));
+    return [...ids];
+  };
 
   const taken = new Set(existing.keys());
   for (const id of idRows.keys()) taken.add(id);
@@ -174,9 +202,10 @@ export function buildImportPlan({ dataRows, mapping, existing, mode, options = {
       continue;
     }
 
-    const match = p.record.id ? existing.get(p.record.id) : undefined;
+    let match = p.record.id ? existing.get(p.record.id) : undefined;
     const duplicateOfFileRow = !p.record.id && identityKeys(p.record).map((k) => seenIdentity.get(k)).find(Boolean);
-    const duplicateOfExisting = !p.record.id && identityKeys(p.record).map((k) => existingByIdentity.get(k)).find(Boolean);
+    const sameIdentity = p.record.id ? [] : identityMatches(p.record);
+    const duplicateOfExisting = sameIdentity.join(', ');
     if (!p.record.id) identityKeys(p.record).forEach((k) => !seenIdentity.has(k) && seenIdentity.set(k, p.rowNumber));
 
     const asNew = () => {
@@ -188,10 +217,12 @@ export function buildImportPlan({ dataRows, mapping, existing, mode, options = {
         row.reason = `मौजूदा सदस्य ${duplicateOfExisting} जैसा — possible duplicate of existing member ${duplicateOfExisting}`;
         row.existingId = duplicateOfExisting;
       } else {
-        const id = p.record.id || generatedId(fingerprint, p.rowNumber, taken);
+        const id = p.record.id || generatedId(p.record, fingerprint, p.rowNumber, taken);
         row.status = 'new';
         row.memberId = id;
-        writes.push({ kind: 'create', id, data: { ...p.record, id, status: 'active' }, rowNumber: p.rowNumber });
+        const data = { ...p.record, id, status: 'active' };
+        if (!data.city && defaultCity) data.city = defaultCity;
+        writes.push({ kind: 'create', id, data, rowNumber: p.rowNumber });
       }
     };
 
@@ -207,6 +238,16 @@ export function buildImportPlan({ dataRows, mapping, existing, mode, options = {
     }
 
     // mode === 'update'
+    if (!match && !p.record.id && matchByIdentity && !duplicateOfFileRow) {
+      if (sameIdentity.length === 1) {
+        match = existing.get(sameIdentity[0]);
+        row.matchedBy = 'identity';
+      } else if (sameIdentity.length > 1) {
+        row.status = 'skipped';
+        row.reason = `अस्पष्ट: ${sameIdentity.length} सदस्य मेल खाते हैं (${sameIdentity.join(', ')}) — ambiguous match, add a member ID`;
+        continue;
+      }
+    }
     if (match) {
       row.memberId = match.id;
       const data = {};

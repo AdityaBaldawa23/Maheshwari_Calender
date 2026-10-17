@@ -114,3 +114,22 @@ export function normalizeMemberId(v) {
 
 const DEVANAGARI = /[ऀ-ॿ]/;
 export const isDevanagari = (s) => DEVANAGARI.test(s);
+
+/**
+ * Spreadsheet placeholders meaning "no value" (e.g. Anniversary = "N/A").
+ * They are treated exactly like an empty cell — never as an invalid value.
+ */
+const PLACEHOLDERS = new Set([
+  'n/a', 'na', 'n.a', 'n.a.', 'n. a.', '#n/a', 'not applicable', 'not available', 'nil', 'none', 'null', 'nan',
+  '-', '--', '---', '_', '—', '–', '.', 'x', 'नहीं', 'लागू नहीं', 'उपलब्ध नहीं', 'नाही',
+]);
+
+export function isPlaceholder(v) {
+  return typeof v === 'string' && PLACEHOLDERS.has(cleanText(v).toLowerCase());
+}
+
+/** "ABHIJIT NITIN ATTAL" → "Abhijit Nitin Attal". Mixed-case and Devanagari text is left unchanged. */
+export function titleCaseIfAllCaps(s) {
+  if (typeof s !== 'string' || !/[A-Z]/.test(s) || /[a-z]/.test(s) || /[^\x20-\x7e]/.test(s)) return s;
+  return s.toLowerCase().replace(/(^|[\s.'-])([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase());
+}

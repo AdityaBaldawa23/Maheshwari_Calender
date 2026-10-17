@@ -28,7 +28,7 @@ const ALIASES = {
   nameEn: ['name english', 'english name', 'name in english', 'नाम अंग्रेज़ी', 'नाम अंग्रेजी', 'अंग्रेजी नाम'],
   dob: ['dob', 'date of birth', 'birth date', 'birthdate', 'd o b', 'जन्म तिथि', 'जन्मतिथि', 'जन्म दिनांक', 'जन्मदिन'],
   age: ['age', 'आयु', 'उम्र', 'वय'],
-  anniversary: ['anniversary', 'marriage anniversary', 'wedding anniversary', 'anniversary date', 'विवाह वर्षगांठ', 'वर्षगांठ', 'विवाह तिथि', 'शादी की सालगिरह'],
+  anniversary: ['anniversary', 'marriage anniversary', 'wedding anniversary', 'anniversary date', 'marriage date', 'wedding date', 'विवाह वर्षगांठ', 'वर्षगांठ', 'विवाह तिथि', 'शादी की सालगिरह'],
   bloodGroup: ['blood group', 'bloodgroup', 'blood', 'blood grp', 'रक्त समूह', 'ब्लड ग्रुप', 'रक्तगट'],
   fatherName: ['father', 'father name', 'fathers name', 'father s name', 'पिता', 'पिता का नाम', 'पिताजी का नाम', 'वडिलांचे नाव'],
   motherName: ['mother', 'mother name', 'mothers name', 'mother s name', 'माता', 'माता का नाम', 'माताजी का नाम', 'आईचे नाव'],
@@ -48,6 +48,17 @@ export function normalizeHeader(h) {
     .trim();
 }
 
+/**
+ * Serial-number columns ("N", "No", "Sr No", "क्रम") are NOT member IDs: they change
+ * whenever the sheet is sorted or rows are added, so they are always ignored.
+ */
+export const SERIAL_HEADERS = ['n', 'no', 'nos', 'sr', 'sr no', 'srno', 's no', 'sno', 'sl no', 'serial', 'serial no', 'serial number', 'क्र', 'क्रम', 'क्रमांक', 'अनु क्र', 'अनुक्रमांक'];
+const SERIAL_SET = new Set(SERIAL_HEADERS.map((h) => normalizeHeader(h)));
+export const isSerialHeader = (h) => {
+  const n = normalizeHeader(h);
+  return n !== '' && SERIAL_SET.has(n);
+};
+
 const ALIAS_INDEX = new Map(
   Object.entries(ALIASES).flatMap(([target, list]) => list.map((alias) => [normalizeHeader(alias), target])),
 );
@@ -60,7 +71,7 @@ export function suggestMapping(headers) {
   const used = new Set();
   const mapping = {};
   headers.forEach((h, i) => {
-    const target = ALIAS_INDEX.get(normalizeHeader(h)) ?? null;
+    const target = isSerialHeader(h) ? null : (ALIAS_INDEX.get(normalizeHeader(h)) ?? null);
     if (target && !used.has(target)) {
       mapping[i] = target;
       used.add(target);

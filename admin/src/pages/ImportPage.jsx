@@ -3,7 +3,7 @@ import { readSheet } from 'read-excel-file/browser';
 import { Button, Card, ConfirmDialog, Field, Notice, StatusPill, downloadText, inputClass } from '../components/ui.jsx';
 import { commitImport, deactivateMembers, fileFingerprint, getImport, loadMembers } from '../services/api.js';
 import { parseCsv, toCsv } from '../../../src/shared/import/csv.js';
-import { IMPORT_TARGETS, checkMapping, splitHeader, suggestMapping } from '../../../src/shared/import/mapping.js';
+import { IMPORT_TARGETS, checkMapping, isSerialHeader, splitHeader, suggestMapping } from '../../../src/shared/import/mapping.js';
 import { buildImportPlan, findMissingRecords } from '../../../src/shared/import/plan.js';
 import { MEMBER_FIELDS } from '../../../src/shared/directorySchema.js';
 import { todayKey } from '../../../src/utils/date.js';
@@ -11,7 +11,10 @@ import { todayKey } from '../../../src/utils/date.js';
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 20000;
 
-const TEMPLATE_HEADERS = ['Member ID', 'नाम हिंदी', 'Name English', 'जन्म तिथि', 'Age', 'विवाह वर्षगांठ', 'रक्त समूह', 'पिता का नाम', 'माता का नाम', 'मोबाइल', 'शहर', 'टिप्पणी'];
+// Same layout as the community's member sheet. Only Name is required; optional columns may be removed.
+// Leave unknown values blank or write N/A. Member ID is optional (filled automatically; keep it once exported).
+const TEMPLATE_HEADERS = ['N', 'Name', 'Mobile No', 'Birth Date', 'Anniversary', 'Blood Group', 'Member ID', "Father's Name", "Mother's Name", 'City', 'Note'];
+const TEMPLATE_EXAMPLE = ['1', 'EXAMPLE NAME SURNAME', '9800000000', '16/02/2005', 'N/A', 'B Positive', '', '', '', 'Sangli', ''];
 
 async function readRows(file) {
   const name = file.name.toLowerCase();
@@ -28,7 +31,7 @@ export function ImportPage({ uid }) {
   const [sheet, setSheet] = useState(null); // { headers, dataRows }
   const [mapping, setMapping] = useState({});
   const [mode, setMode] = useState('create');
-  const [options, setOptions] = useState({ allowCreate: false, clearBlank: false });
+  const [options, setOptions] = useState({ allowCreate: false, clearBlank: false, matchByIdentity: false, defaultCity: '' });
   const [existing, setExisting] = useState(null);
   const [fingerprint, setFingerprint] = useState('');
   const [previous, setPrevious] = useState(null);
@@ -117,7 +120,7 @@ export function ImportPage({ uid }) {
       <Card
         title="Excel / CSV से सदस्य आयात"
         actions={
-          <Button variant="secondary" onClick={() => downloadText('directory-template.csv', toCsv([TEMPLATE_HEADERS]))}>
+          <Button variant="secondary" onClick={() => downloadText('directory-template.csv', toCsv([TEMPLATE_HEADERS, TEMPLATE_EXAMPLE]))}>
             टेम्पलेट डाउनलोड
           </Button>
         }
@@ -149,7 +152,11 @@ export function ImportPage({ uid }) {
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {sheet.headers.map((h, i) => (
-                <Field key={i} label={`कॉलम ${i + 1}: “${h || '(बिना शीर्षक)'}”`}>
+                <Field
+                  key={i}
+                  label={`कॉलम ${i + 1}: “${h || '(बिना शीर्षक)'}”`}
+                  hint={isSerialHeader(h) ? 'क्रम संख्या — सदस्य क्रमांक नहीं, अनदेखा (serial number, ignored)' : undefined}
+                >
                   <select
                     value={mapping[i] ?? ''}
                     onChange={(e) => setMapping((m) => ({ ...m, [i]: e.target.value || null }))}
@@ -165,6 +172,17 @@ export function ImportPage({ uid }) {
                 </Field>
               ))}
             </div>
+            <Field
+              label="डिफ़ॉल्ट शहर / स्थान (Default city)"
+              hint="जिन नई पंक्तियों में शहर नहीं है, उन्हें यह शहर मिलेगा — खाली छोड़ सकते हैं"
+            >
+              <input
+                value={options.defaultCity}
+                onChange={(e) => setOptions((o) => ({ ...o, defaultCity: e.target.value }))}
+                placeholder="जैसे: सांगली"
+                className={inputClass}
+              />
+            </Field>
             <fieldset className="space-y-1 rounded-xl border border-line p-3 text-sm">
               <legend className="px-1 font-semibold">आयात का प्रकार (Mode)</legend>
               <label className="flex gap-2">
@@ -181,6 +199,12 @@ export function ImportPage({ uid }) {
               </label>
               {mode === 'update' && (
                 <div className="ml-6 space-y-1">
+                  <label className="flex gap-2">
+                    <input type="checkbox" checked={options.matchByIdentity} onChange={(e) => setOptions((o) => ({ ...o, matchByIdentity: e.target.checked }))} />
+                    <span>
+                      सदस्य क्रमांक न हो तो <strong>नाम + जन्म तिथि</strong> (या नाम + मोबाइल) से मिलान करें — केवल जब ठीक एक सदस्य मेल खाए
+                    </span>
+                  </label>
                   <label className="flex gap-2">
                     <input type="checkbox" checked={options.allowCreate} onChange={(e) => setOptions((o) => ({ ...o, allowCreate: e.target.checked }))} />
                     बिना मिलान वाली पंक्तियों को नए सदस्य के रूप में जोड़ें
@@ -263,6 +287,7 @@ export function ImportPage({ uid }) {
                             </p>
                           ))}
                           {r.reason && <p className="text-saffron">{r.reason}</p>}
+                          {r.matchedBy === 'identity' && <p className="text-muted">नाम + जन्म तिथि/मोबाइल से मिलान</p>}
                           {r.changes.map((c) => (
                             <p key={c.field}>
                               {fieldLabel(c.field)}: “{String(c.from || '—')}” → “{String(c.to || '—')}”

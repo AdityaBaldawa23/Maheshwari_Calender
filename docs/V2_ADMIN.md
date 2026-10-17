@@ -65,7 +65,7 @@ Rules: [`firestore.rules`](../firestore.rules). Indexes: [`firestore.indexes.jso
    Blaze, immediately create a budget (Google Cloud console → Billing → Budgets & alerts, e.g. ₹200/month, alerts at 50/90/100%).
 
 ## 4. Admin accounts (provisioning / revoking)
-
+  
 Grant:
 1. Authentication → Users → **Add user** (email + temporary password). Tell the person to sign in and use “पासवर्ड भूल गए?” to set their own password.
 2. Copy the user’s **UID**.
@@ -80,12 +80,25 @@ Every portal write is checked server-side by the rules; hiding buttons is not th
 
 ### Excel / CSV template
 
-Download “टेम्पलेट डाउनलोड” in the portal, or use any sheet whose **first non-empty row is the header**. Recognised headers
-(case/punctuation-insensitive; anything else can be mapped manually or ignored):
+The community's existing member sheet can be uploaded **as is**:
+
+| N | Name | Mobile No | Birth Date | Anniversary | Blood Group |
+| --- | --- | --- | --- | --- | --- |
+| 1 | ABHIJIT … (ALL CAPS ok) | 98xxxxxxxx | 16/02/2005 | N/A | B Positive |
+
+* **N / Sr No / क्र.** (serial number) is always ignored. It is not a member ID, because it changes whenever the sheet is sorted.
+* **Anniversary is optional.** `N/A`, `NA`, `-`, `#N/A`, `nil`, `नहीं` or an empty cell all mean "no value" (in any column).
+* ALL-CAPS English names are stored in Title Case ("Abhijit Nitin Attal"). Hindi names are kept as written.
+* No city column? Enter **डिफ़ॉल्ट शहर** (e.g. सांगली) on the mapping screen. It is applied to new rows only.
+* Extra optional columns (`Member ID`, `Father's Name`, `Mother's Name`, `City`, `Note`) can be added at any time.
+  “टेम्पलेट डाउनलोड” gives exactly this layout.
+
+The first non-empty row must be the header. Recognised headers (case/punctuation-insensitive; anything else can be
+mapped manually or ignored):
 
 | Field | Example headers | Rules |
 | --- | --- | --- |
-| Member ID | `Member ID`, `ID`, `सदस्य क्रमांक` | letters/digits/`-`/`_`, ≤40; unique in file. Generated if blank (new records only) |
+| Member ID | `Member ID`, `ID`, `सदस्य क्रमांक` | optional; letters/digits/`-`/`_`, ≤40; unique in file. If absent, a **stable ID is derived from name + birth date** (else name + mobile, else name + father), so the same person keeps the same ID in later uploads |
 | Name (auto) | `Name`, `नाम`, `पूरा नाम` | Devanagari → Hindi name, otherwise English name |
 | Name Hindi / English | `नाम हिंदी`, `Name English` | ≤100 chars; at least one name required |
 | DOB / Anniversary | `DOB`, `जन्म तिथि`, `Anniversary`, `विवाह वर्षगांठ` | `DD/MM/YYYY`, `DD-MM-YYYY`, `YYYY-MM-DD`, Excel date cells; 4-digit year; not in the future |
@@ -103,8 +116,13 @@ warning, and CSV export prefixes such cells with `'` to prevent spreadsheet form
 
 * **नए सदस्य जोड़ें (create)** — initial import. Rows whose ID already exists, or which look like an existing member
   (same name + DOB, or same name + father), are marked *duplicate* and **not** written.
-* **मौजूदा अपडेट करें (update)** — matched **only by member ID**; only changed fields are written; blank cells do **not**
-  erase data unless “खाली सेल से मान मिटाएँ” is ticked. Rows without a matching ID are skipped unless “create new” is ticked.
+* **मौजूदा अपडेट करें (update)** — matched by member ID. For sheets without IDs, tick **“नाम + जन्म तिथि से मिलान”**:
+  a row then matches an existing member with the same name + birth date (or name + mobile / name + father), and **only if
+  exactly one** member matches. Otherwise it is skipped as ambiguous. Only changed fields are written. Blank / `N/A` cells
+  do **not** erase data unless “खाली सेल से मान मिटाएँ” is ticked. Unmatched rows are skipped unless “create new” is ticked.
+* Typical yearly workflow with the community sheet: upload the updated sheet in **create** mode to add newcomers (people
+  already present are reported as duplicates and skipped). Then upload it in **update** mode with name + birth-date matching to
+  apply changed mobiles or blood groups. Alternatively, export CSV from the portal (it includes Member IDs) and edit that.
 * Names are never used as identity. Two rows with the same ID in one file are both rejected (ambiguous).
 * Nothing is deleted by an import. After an update import, an optional, separately confirmed **reconcile** step can
   *deactivate* (not delete) active members missing from the file — you must type the count to confirm.
