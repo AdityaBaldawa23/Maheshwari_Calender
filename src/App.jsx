@@ -8,6 +8,7 @@ import { AppHeader } from './components/AppHeader.jsx';
 import { BottomNav } from './components/BottomNav.jsx';
 import { VIEW_ORDER } from './constants/views.js';
 import { DayDetailSheet } from './components/DayDetailSheet.jsx';
+import { closeTopSheet } from './components/Sheet.jsx';
 import { PermissionDialog } from './components/PermissionDialog.jsx';
 import { useReminders } from './hooks/useReminders.jsx';
 import { CalendarPage } from './pages/CalendarPage.jsx';
@@ -80,8 +81,9 @@ export default function App() {
     [openDate],
   );
 
-  // Android back: dialog → sheet → sub-screen → calendar tab → exit.
+  // Android back: topmost popup (any screen) → sub-screen → calendar tab → exit.
   useBackButton(() => {
+    if (closeTopSheet()) return true;
     if (dialog) closeDialog();
     else if (selected) setSelected(null);
     else if (moreSection) setMoreSection(null);

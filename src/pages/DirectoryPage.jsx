@@ -5,6 +5,9 @@ import { buildDirectoryIndex, searchDirectory } from '../services/directorySearc
 import { memberName } from '../shared/directorySchema.js';
 import { formatDateTime, num } from '../utils/format.js';
 import { MemberSheet } from '../components/MemberSheet.jsx';
+import { TodayCelebrations } from '../components/Celebrations.jsx';
+import { useCelebrationIndex } from '../hooks/useCelebrations.js';
+import { celebrationsOn } from '../services/celebrations.js';
 
 const PAGE_SIZE = 50;
 
@@ -55,6 +58,8 @@ export function DirectoryPage({ today }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [openId, setOpenId] = useState(null);
   const deferredQuery = useDeferredValue(query); // keeps typing smooth on large directories
+  const celebrationIndex = useCelebrationIndex();
+  const todays = useMemo(() => celebrationsOn(celebrationIndex, today), [celebrationIndex, today]);
 
   const results = useMemo(
     () => (index ? searchDirectory(index, { query: deferredQuery, bloodGroup, city }) : []),
@@ -84,6 +89,7 @@ export function DirectoryPage({ today }) {
 
       {index && (
         <>
+          <TodayCelebrations entries={todays} onOpen={setOpenId} />
           <div className="card space-y-2 p-3">
             <label htmlFor="dir-search" className="sr-only">
               नाम, पिता का नाम, शहर या फ़ोन से खोजें

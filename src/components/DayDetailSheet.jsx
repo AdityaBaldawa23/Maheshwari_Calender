@@ -7,7 +7,12 @@ import { addDays } from '../utils/date.js';
 import {
   formatDate, formatDateTime, formatTime, fullTithiLabel, maasName, num, tithiName, txt, weekdayName,
 } from '../utils/format.js';
+import { useMemo, useState } from 'react';
 import { Sheet } from './Sheet.jsx';
+import { CelebrationList } from './Celebrations.jsx';
+import { MemberSheet } from './MemberSheet.jsx';
+import { useCelebrationIndex } from '../hooks/useCelebrations.js';
+import { celebrationsOn } from '../services/celebrations.js';
 import { CategoryLabel } from './OccasionTag.jsx';
 import { BellIcon, BellOffIcon, ChevronLeft, ChevronRight, SunriseIcon, SunsetIcon } from './Icons.jsx';
 
@@ -90,6 +95,9 @@ function OccasionReminder({ occasion }) {
 export function DayDetailSheet({ dateKey, today, onClose, onNavigate }) {
   const info = useDateInfo(dateKey);
   const isToday = dateKey === today;
+  const celebrationIndex = useCelebrationIndex();
+  const celebrations = useMemo(() => celebrationsOn(celebrationIndex, dateKey), [celebrationIndex, dateKey]);
+  const [openMember, setOpenMember] = useState(null);
 
   return (
     <Sheet labelledBy="day-sheet-title" onClose={onClose}>
@@ -193,7 +201,17 @@ export function DayDetailSheet({ dateKey, today, onClose, onNavigate }) {
             )}
           </section>
         )}
+
+        {celebrations.length > 0 && (
+          <section className="mt-4" aria-labelledby="day-celebrations-title">
+            <h3 id="day-celebrations-title" className="font-display text-lg text-maroon">
+              जन्मदिन एवं वर्षगांठ
+            </h3>
+            <CelebrationList entries={celebrations} onOpen={(id) => setOpenMember(celebrations.find((c) => c.member.id === id)?.member ?? null)} />
+          </section>
+        )}
       </div>
+      {openMember && <MemberSheet member={openMember} today={today} onClose={() => setOpenMember(null)} />}
     </Sheet>
   );
 }

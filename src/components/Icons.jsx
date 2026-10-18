@@ -52,6 +52,12 @@ export const MapPinIcon = (p) => (
     <circle cx="12" cy="10" r="3" />
   </svg>
 );
+export const WhatsAppIcon = (p) => (
+  <svg {...base} {...p}>
+    <path d="M3 21l1.65-3.8A9 9 0 1 1 7.2 19.6L3 21" />
+    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+  </svg>
+);
 export const ListIcon = (p) => (
   <svg {...base} {...p}>
     <path d="M9 6h12M9 12h12M9 18h12" />

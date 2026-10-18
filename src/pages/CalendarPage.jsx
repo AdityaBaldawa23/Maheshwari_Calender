@@ -2,12 +2,18 @@ import { buildMonthGrid } from '../utils/date.js';
 import { useMonthData } from '../hooks/useCalendarData.js';
 import { CalendarGrid } from '../components/CalendarGrid.jsx';
 import { MonthNavigator } from '../components/MonthNavigator.jsx';
+import { useCelebrationIndex } from '../hooks/useCelebrations.js';
+import { celebrationCountsForMonth } from '../services/celebrations.js';
+import { useMemo } from 'react';
 
 /** FRONT page: the month grid fills the whole screen between header and tabs. */
 export function CalendarPage({ today, month, selected, onSelectDate, onChangeMonth, onGoToday, isCurrentMonth, onPickMonth }) {
   const monthData = useMonthData(month.y, month.m);
   // Grid structure never waits for data.
   const weeks = monthData?.weeks ?? buildMonthGrid(month.y, month.m);
+  // Birthdays/anniversaries from the cached directory (computed locally, no network).
+  const celebrationIndex = useCelebrationIndex();
+  const celebrations = useMemo(() => celebrationCountsForMonth(celebrationIndex, month.y, month.m), [celebrationIndex, month.y, month.m]);
 
   return (
     // min-h keeps cells readable on very short screens (the page scrolls instead of squashing).
@@ -26,6 +32,7 @@ export function CalendarPage({ today, month, selected, onSelectDate, onChangeMon
         <CalendarGrid
           weeks={weeks}
           days={monthData?.days}
+          celebrations={celebrations}
           today={today}
           selected={selected}
           onSelect={onSelectDate}

@@ -12,18 +12,19 @@ function MoonGlyph({ paksha, onDark }) {
   return <span aria-hidden="true" className={`inline-block h-3 w-3 shrink-0 rounded-full border ${ring} ${fill}`} />;
 }
 
-function ariaLabelFor(key, info, isToday) {
+function ariaLabelFor(key, info, isToday, celebrationCount) {
   const { y, m, d } = parseKey(key);
   const parts = [isToday ? 'आज' : '', formatDate(key), weekdayName(weekdayOf(y, m, d))];
   if (info?.panchang) parts.push(fullTithiLabel(info.panchang));
   for (const o of info?.occasions ?? []) parts.push(txt(o.title));
+  if (celebrationCount) parts.push(`${num(celebrationCount)} जन्मदिन/वर्षगांठ`);
   return parts.filter(Boolean).join(', ');
 }
 
 /** Occasion names are shortened in cells: "दीपावली (लक्ष्मी पूजन)" → "दीपावली". */
 const shortTitle = (o) => txt(o.title).split(' (')[0].split(' / ')[0];
 
-const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSelect }) {
+const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSelect, celebrationCount = 0 }) {
   const { y, m, d } = parseKey(dateKey);
   const weekday = weekdayOf(y, m, d);
   const occasions = info?.occasions ?? [];
@@ -39,7 +40,7 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
     <button
       type="button"
       onClick={() => onSelect(dateKey)}
-      aria-label={ariaLabelFor(dateKey, info, isToday)}
+      aria-label={ariaLabelFor(dateKey, info, isToday, celebrationCount)}
       aria-current={isToday ? 'date' : undefined}
       aria-pressed={isSelected}
       className={`flex h-full w-full min-w-0 flex-col items-stretch gap-0.5 overflow-hidden px-1 pt-0.5 pb-1 text-left max-[359px]:px-0.5 ${tone} ${
@@ -72,8 +73,14 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
         </span>
       )}
 
-      {occasions.length > 0 && (
+      {(occasions.length > 0 || celebrationCount > 0) && (
         <span className="mt-auto flex min-h-0 min-w-0 flex-col gap-px overflow-hidden">
+          {celebrationCount > 0 && (
+            <span aria-hidden="true" className={`shrink-0 text-[0.62rem] leading-tight font-semibold ${isToday ? 'text-gold-soft' : 'text-maroon'}`}>
+              🎂 {num(celebrationCount)}
+            </span>
+          )}
+          {occasions.length > 0 && (
           <span
             className={`line-clamp-2 max-[359px]:line-clamp-1 text-[0.62rem] max-[359px]:text-[0.56rem] [overflow-wrap:anywhere] leading-[1.2] font-semibold ${
               isToday ? 'text-gold-soft' : (CATEGORY_TEXT[occasions[0].category] ?? 'text-ink')
@@ -81,6 +88,7 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
           >
             {shortTitle(occasions[0])}
           </span>
+          )}
           {occasions.length > 1 && (
             <span className={`text-[0.58rem] leading-none ${isToday ? 'text-white/80' : 'text-muted'}`}>
               +{num(occasions.length - 1)} और
@@ -98,7 +106,7 @@ const DayCell = memo(function DayCell({ dateKey, info, isToday, isSelected, onSe
  * along their weekday row. Cells stretch to fill the available space.
  * Swipe left/right to change month. Renders plain dates while data loads.
  */
-export function CalendarGrid({ weeks, days, today, selected, onSelect, onPrev, onNext }) {
+export function CalendarGrid({ weeks, days, today, selected, onSelect, onPrev, onNext, celebrations }) {
   const swipe = useSwipe({ onSwipeLeft: onNext, onSwipeRight: onPrev });
   const columns = weeks.length;
   const lastCol = columns - 1;
@@ -138,6 +146,7 @@ export function CalendarGrid({ weeks, days, today, selected, onSelect, onPrev, o
                   isToday={key === today}
                   isSelected={key === selected}
                   onSelect={onSelect}
+                  celebrationCount={celebrations?.[key] ?? 0}
                 />
               </div>
             ) : (

@@ -21,7 +21,7 @@ export default [
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^(_|[A-Z])' }],
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true, allowExportNames: ['useSettings', 'useReminders', 'useAuth', 'downloadText', 'inputClass'] },
+        { allowConstantExport: true, allowExportNames: ['useSettings', 'useReminders', 'useAuth', 'downloadText', 'inputClass', 'closeTopSheet'] },
       ],
     },
   },

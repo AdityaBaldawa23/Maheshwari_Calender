@@ -120,3 +120,9 @@ export function samvatLabel(samvats) {
   if (!samvats?.length) return '';
   return `वि.सं. ${samvats.map((s) => num(s)).join('–')}`;
 }
+
+/** "+919876543210" → "+९१ ९८७६५ ४३२१०"; other numbers just get Devanagari digits. */
+export function formatPhone(phone, lang = 'hi') {
+  const m = /^\+91([6-9]\d{4})(\d{5})$/.exec(phone ?? '');
+  return num(m ? `+91 ${m[1]} ${m[2]}` : (phone ?? ''), lang);
+}
