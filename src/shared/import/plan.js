@@ -18,7 +18,7 @@
  */
 import { fnv1a } from '../hash.js';
 import { ageOn } from '../directorySchema.js';
-import { matchProfession, professionLabel } from '../professions.js';
+import { isCategoryName, matchProfession } from '../professions.js';
 import { DEFAULT_ORG, ORG_IDS, orgOf } from '../organizations.js';
 import {
   cleanText, isBlank, isDevanagari, isPlaceholder, looksLikeFormula, normalizeAge, normalizeBloodGroup, normalizeDate,
@@ -102,7 +102,7 @@ export function parseRow(cells, mapping, { today }) {
         const id = matchProfession(text);
         record.profession = id ?? 'other';
         // Keep the original wording as detail unless it is just the category name.
-        const isLabel = id && [professionLabel(id, 'en').toLowerCase(), professionLabel(id, 'hi'), id].includes(text.toLowerCase());
+        const isLabel = id && isCategoryName(id, text);
         if (!isLabel) record._professionText = text;
         if (!id) warnings.push({ field: 'profession', message: `“${text}” किसी श्रेणी से मेल नहीं — stored as Other (detail kept)` });
         break;

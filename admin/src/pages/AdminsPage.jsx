@@ -12,7 +12,7 @@ export function AdminsPage() {
 
   return (
     <>
-      <Card title="सक्रिय व्यवस्थापक">
+      <Card title="Active administrators">
         {error && <Notice tone="error">{error}</Notice>}
         <ul className="divide-y divide-line text-sm">
           {(admins ?? []).map((a) => (
@@ -22,21 +22,21 @@ export function AdminsPage() {
           ))}
         </ul>
       </Card>
-      <Card title="व्यवस्थापक जोड़ना / हटाना">
+      <Card title="Adding / removing administrators">
         <ol className="list-decimal space-y-1 pl-5 text-sm leading-relaxed">
-          <li>Firebase console → Authentication → Users → “Add user” (ईमेल + अस्थायी पासवर्ड)। नया व्यक्ति लॉगिन के बाद पासवर्ड बदले।</li>
-          <li>उसका User UID कॉपी करें।</li>
+          <li>Firebase console → Authentication → Users → “Add user” (email + temporary password). The new admin then uses “Forgot password?” to set their own.</li>
+          <li>Copy their User UID.</li>
           <li>
-            Firestore → <code>admins</code> collection → Document ID = वही UID → फ़ील्ड: <code>active: true</code> (boolean),{' '}
-            <code>email</code>, <code>name</code>।
+            Firestore → <code>admins</code> collection → Document ID = that UID → fields: <code>active: true</code> (boolean),{' '}
+            <code>email</code>, <code>name</code>.
           </li>
           <li>
-            हटाने के लिए: उसी दस्तावेज़ में <code>active: false</code> करें (या दस्तावेज़ हटाएँ) और Authentication में खाता Disable करें।
+            To remove: set <code>active: false</code> in that document (or delete it) and disable the account in Authentication.
           </li>
         </ol>
         <p className="mt-2 text-xs text-muted">
-          सुरक्षा कारण से यह सूची पोर्टल से नहीं बदली जा सकती — Security Rules किसी भी क्लाइंट को <code>admins</code> बदलने नहीं देते।
-          विवरण: docs/V2_ADMIN.md
+          For security this list cannot be changed from the portal — Security Rules let no client modify <code>admins</code>.
+          Details: docs/V2_ADMIN.md
         </p>
       </Card>
     </>

@@ -78,3 +78,16 @@ export function matchProfession(text) {
   return MATCHERS.find((m) => m.tests.some((test) => test(t)))?.id ?? null;
 }
 
+
+/**
+ * True when the text is just a name for the category (its label, id or one of
+ * its keywords, e.g. "Housewife", "CA") — i.e. it adds no detail worth keeping.
+ */
+export function isCategoryName(id, text) {
+  const p = BY_ID.get(id);
+  if (!p || typeof text !== 'string') return false;
+  const clean = (s) => s.normalize('NFC').toLowerCase().replace(/[.\s]+/g, ' ').trim();
+  const t = clean(text);
+  const names = [p.id, p.en, p.hi, ...p.keywords].map(clean);
+  return names.includes(t);
+}

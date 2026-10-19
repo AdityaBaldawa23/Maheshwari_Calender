@@ -148,7 +148,7 @@ export async function rollbackDirectory(publication, uid) {
   const { meta } = publication;
   for (let i = 0; i < meta.chunkCount; i++) {
     const chunk = await getDoc(doc(db, 'published', 'directory', 'chunks', chunkId(meta.version, i)));
-    if (!chunk.exists()) throw new Error('इस संस्करण के डेटा अब उपलब्ध नहीं — chunks of this version were pruned');
+    if (!chunk.exists()) throw new Error('The data of this version is no longer available (older versions are pruned)');
   }
   const batch = writeBatch(db);
   batch.set(doc(db, 'published', 'directory'), { ...meta, publishedBy: uid });
@@ -174,8 +174,8 @@ export function validateDataset(name, payload) {
   if (name === 'emergency') return checkEmergencyDoc({ ...payload, schemaVersion: EMERGENCY_SCHEMA_VERSION });
   if (name === 'content') {
     return [
-      ...(payload.ads ?? []).flatMap((a, i) => checkAdvertisement(a).map((p) => `विज्ञापन ${i + 1}: ${p}`)),
-      ...(payload.notices ?? []).flatMap((n, i) => checkNotice(n).map((p) => `सूचना ${i + 1}: ${p}`)),
+      ...(payload.ads ?? []).flatMap((a, i) => checkAdvertisement(a).map((p) => `Ad ${i + 1}: ${p}`)),
+      ...(payload.notices ?? []).flatMap((n, i) => checkNotice(n).map((p) => `Notice ${i + 1}: ${p}`)),
     ];
   }
   const year = Number(name.replace('occasions_', ''));
@@ -184,7 +184,7 @@ export function validateDataset(name, payload) {
   (payload.occasions ?? []).forEach((o, i) => {
     problems.push(...checkOccasion(o, year).map((p) => `${o?.id ?? i}: ${p}`));
     const key = `${o?.id}|${o?.date}`;
-    if (seen.has(key)) problems.push(`दोहराया गया — duplicate ${key}`);
+    if (seen.has(key)) problems.push(`duplicate ${key}`);
     seen.add(key);
   });
   return problems;

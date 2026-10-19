@@ -66,7 +66,7 @@ export function Notice({ tone = 'info', children }) {
  * Confirmation dialog. With `confirmText`, the admin must type it exactly
  * (used for destructive bulk actions).
  */
-export function ConfirmDialog({ title, children, confirmLabel = 'पुष्टि करें', danger, confirmText, onConfirm, onCancel, busy }) {
+export function ConfirmDialog({ title, children, confirmLabel = 'Confirm', danger, confirmText, onConfirm, onCancel, busy }) {
   const inputRef = useRef(null);
   const dialogRef = useRef(null);
   useEffect(() => {
@@ -88,16 +88,16 @@ export function ConfirmDialog({ title, children, confirmLabel = 'पुष्ट
         <h2 className="font-display text-xl text-maroon">{title}</h2>
         <div className="mt-2 space-y-2 text-sm leading-relaxed text-ink">{children}</div>
         {confirmText && (
-          <Field label={`पुष्टि हेतु लिखें: ${confirmText}`}>
+          <Field label={`Type ${confirmText} to confirm`}>
             <TextInput ref={inputRef} autoComplete="off" />
           </Field>
         )}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={onCancel} disabled={busy}>
-            रद्द करें
+            Cancel
           </Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={ok} disabled={busy}>
-            {busy ? 'कृपया प्रतीक्षा करें…' : confirmLabel}
+            {busy ? 'Please wait…' : confirmLabel}
           </Button>
         </div>
       </div>
@@ -107,14 +107,14 @@ export function ConfirmDialog({ title, children, confirmLabel = 'पुष्ट
 
 export function StatusPill({ status }) {
   const map = {
-    new: ['नया', 'bg-green-100 text-vrat'],
-    update: ['अपडेट', 'bg-gold-soft text-maroon'],
-    unchanged: ['बिना बदलाव', 'bg-paper text-muted'],
-    invalid: ['त्रुटि', 'bg-saffron-soft text-sunday'],
-    duplicate: ['दोहराव', 'bg-saffron-soft text-saffron'],
-    skipped: ['छोड़ा गया', 'bg-paper text-muted'],
-    active: ['सक्रिय', 'bg-green-100 text-vrat'],
-    inactive: ['निष्क्रिय', 'bg-paper text-muted'],
+    new: ['New', 'bg-green-100 text-vrat'],
+    update: ['Update', 'bg-gold-soft text-maroon'],
+    unchanged: ['Unchanged', 'bg-paper text-muted'],
+    invalid: ['Error', 'bg-saffron-soft text-sunday'],
+    duplicate: ['Duplicate', 'bg-saffron-soft text-saffron'],
+    skipped: ['Skipped', 'bg-paper text-muted'],
+    active: ['Active', 'bg-green-100 text-vrat'],
+    inactive: ['Inactive', 'bg-paper text-muted'],
   };
   const [label, cls] = map[status] ?? [status, 'bg-paper text-muted'];
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${cls}`}>{label}</span>;
@@ -128,4 +128,14 @@ export function downloadText(filename, text, type = 'text/csv;charset=utf-8') {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Validation messages are written "हिंदी — English" (shared with the Hindi app);
+ * the English-first portal shows the English part.
+ */
+export function en(message) {
+  if (typeof message !== 'string') return '';
+  const i = message.lastIndexOf(' — ');
+  return i >= 0 ? message.slice(i + 3) : message;
 }

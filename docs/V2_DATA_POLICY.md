@@ -18,6 +18,8 @@ Personal Data Protection Act, 2023.
 | Blood group | Find donors quickly in medical emergencies |
 | Date of birth / anniversary | Community greetings and age (computed automatically) |
 | Public note | Short role/committee information approved by an admin |
+| Photo | Recognise members; used on greeting posters |
+| Profession, designation | Find professionals within the community; show committee roles |
 
 Internal notes and inactive members are never published.
 
@@ -25,15 +27,17 @@ Internal notes and inactive members are never published.
 
 1. **Permission first.** A person's details are published only after that person (or a guardian, for minors) has agreed
    to their information appearing in a public app. Keep the collected forms or messages in the organisation's own records.
-2. **Minimum data.** Leave any field blank that a member does not want published (blank fields show "—" in the app).
+2. **Photos need consent too.** Only publish a photo the member has agreed to share; remove the link to unpublish it
+   (the image itself stays on Cloudinary until deleted there).
+3. **Minimum data.** Leave any field blank that a member does not want published (blank fields show "—" in the app).
    Consider not publishing full dates of birth or phone numbers of minors.
-3. **Correction & removal.** Any member can ask an office-bearer to correct or remove their entry. The admin edits or
+4. **Correction & removal.** Any member can ask an office-bearer to correct or remove their entry. The admin edits or
    deactivates the record in the portal and publishes. Phones pick up the change the next time they sync with
    internet; copies already on devices cannot be recalled instantly.
-4. **Administrator duties.** Only provisioned admins may edit. Each publication requires the admin to confirm (checkbox)
+5. **Administrator duties.** Only provisioned admins may edit. Each publication requires the admin to confirm (checkbox)
    that permission was obtained. Imports and publications are logged with the admin's account.
-5. **Security of source files.** Spreadsheets and CSV exports contain personal data. Store them securely and do not
+6. **Security of source files.** Spreadsheets and CSV exports contain personal data. Store them securely and do not
    circulate them on open groups.
-6. **Review.** Re-confirm the list at least once a year and deactivate entries of people who have left or asked to be removed.
+7. **Review.** Re-confirm the list at least once a year and deactivate entries of people who have left or asked to be removed.
 
 Contact for corrections: [ORGANISATION NAME, PHONE / EMAIL] (shown to users in the app's directory screen).

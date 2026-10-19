@@ -16,7 +16,7 @@ export function PublishBar({ draftState, changes }) {
       setMessage({ tone: 'success', text: ok });
       setConfirming(false);
     } catch (err) {
-      setMessage({ tone: 'error', text: `असफल — पिछला प्रकाशित संस्करण यथावत है: ${err.message}` });
+      setMessage({ tone: 'error', text: `Failed — the previously published version is still live: ${err.message}` });
     } finally {
       setBusy(false);
     }
@@ -26,37 +26,37 @@ export function PublishBar({ draftState, changes }) {
     <div className="card sticky bottom-2 z-10 space-y-2 p-3">
       {problems.length > 0 && (
         <Notice tone="error">
-          प्रकाशन से पहले ठीक करें ({problems.length}): {problems.slice(0, 4).join(' · ')}
+          Fix before publishing ({problems.length}): {problems.slice(0, 4).join(' · ')}
         </Notice>
       )}
       {message && <Notice tone={message.tone}>{message.text}</Notice>}
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-auto text-xs text-muted">
-          {published ? `प्रकाशित संस्करण: ${new Date(published.version).toLocaleString('hi-IN')}` : 'अभी प्रकाशित नहीं'}
-          {hasUnpublished && ' · अप्रकाशित बदलाव हैं'}
+          {published ? `Published version: ${new Date(published.version).toLocaleString('en-IN')}` : 'Not published yet'}
+          {hasUnpublished && ' · There are unpublished changes'}
         </span>
-        <Button variant="secondary" disabled={busy || !dirty} onClick={() => run(draftState.save, 'ड्राफ़्ट सहेजा गया (ऐप में अभी नहीं दिखेगा)।')}>
-          ड्राफ़्ट सहेजें
+        <Button variant="secondary" disabled={busy || !dirty} onClick={() => run(draftState.save, 'Draft saved (not visible in the app yet).')}>
+          Save draft
         </Button>
         <Button disabled={busy || problems.length > 0 || !hasUnpublished} onClick={() => setConfirming(true)}>
-          पूर्वावलोकन एवं प्रकाशन
+          Preview & publish
         </Button>
       </div>
       {confirming && (
         <ConfirmDialog
-          title="प्रकाशित करें?"
+          title="Publish?"
           busy={busy}
-          confirmLabel="प्रकाशित करें"
+          confirmLabel="Publish"
           onCancel={() => setConfirming(false)}
-          onConfirm={() => run(draftState.publish, 'प्रकाशित! ऐप अगली बार खुलने/लौटने पर अपडेट लेगा।')}
+          onConfirm={() => run(draftState.publish, 'Published! Phones update the next time the app is opened.')}
         >
-          <p>ये बदलाव सभी ऐप उपयोगकर्ताओं को दिखेंगे:</p>
+          <p>These changes will be visible to all app users:</p>
           <ul className="max-h-60 list-none overflow-auto rounded-lg bg-paper p-2 font-mono text-xs">
-            {(changes.length ? changes : ['(विवरण बदलाव)']).map((c, i) => (
+            {(changes.length ? changes : ['(detail changes)']).map((c, i) => (
               <li key={i}>{c}</li>
             ))}
           </ul>
-          <p className="text-xs text-muted">पिछला संस्करण “इतिहास” से पुनः प्रकाशित किया जा सकता है।</p>
+          <p className="text-xs text-muted">Earlier versions can be re-published from “History”.</p>
         </ConfirmDialog>
       )}
     </div>

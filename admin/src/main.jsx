@@ -9,10 +9,10 @@ function SetupNeeded() {
   return (
     <main className="mx-auto max-w-xl p-6">
       <div className="card space-y-2 p-5 text-sm leading-relaxed">
-        <h1 className="font-display text-2xl text-maroon">Firebase कॉन्फ़िगरेशन आवश्यक</h1>
+        <h1 className="font-display text-2xl text-maroon">Firebase configuration required</h1>
         <p>
-          <code>.env.local</code> में <code>VITE_FIREBASE_API_KEY</code>, <code>VITE_FIREBASE_PROJECT_ID</code>,{' '}
-          <code>VITE_FIREBASE_AUTH_DOMAIN</code> और <code>VITE_FIREBASE_APP_ID</code> भरें, फिर पोर्टल दोबारा बनाएँ।
+          Fill in <code>VITE_FIREBASE_API_KEY</code>, <code>VITE_FIREBASE_PROJECT_ID</code>,{' '}
+          <code>VITE_FIREBASE_AUTH_DOMAIN</code> and <code>VITE_FIREBASE_APP_ID</code> in <code>.env.local</code>, then rebuild the portal.
         </p>
         <p>See docs/V2_ADMIN.md → “Firebase project setup”.</p>
       </div>

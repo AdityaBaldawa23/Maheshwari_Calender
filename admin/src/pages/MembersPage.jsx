@@ -1,22 +1,37 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Card, ConfirmDialog, Field, Notice, StatusPill, TextInput, downloadText, inputClass } from '../components/ui.jsx';
+import { Button, Card, ConfirmDialog, Field, Notice, StatusPill, TextInput, downloadText, en, inputClass } from '../components/ui.jsx';
 import { deleteMember, getPublished, loadMembers, prepareDirectory, publishDirectory, saveMember } from '../services/api.js';
-import { BLOOD_GROUPS, memberName } from '../../../src/shared/directorySchema.js';
+import { BLOOD_GROUPS, memberName, photoThumb } from '../../../src/shared/directorySchema.js';
 import { EMPTY_MEMBER_FORM, newMemberId, toForm, validateMemberForm } from '../../../src/shared/memberForm.js';
 import { normalizeForSearch } from '../../../src/services/directorySearch.js';
+import { PROFESSIONS, professionLabel } from '../../../src/shared/professions.js';
+import { ORGANIZATIONS, orgLabel, orgOf } from '../../../src/shared/organizations.js';
 import { toCsv } from '../../../src/shared/import/csv.js';
 import { todayKey } from '../../../src/utils/date.js';
 
 const EXPORT_COLUMNS = [
-  ['id', 'Member ID'], ['nameHi', 'नाम हिंदी'], ['nameEn', 'Name English'], ['dob', 'Date of Birth'], ['age', 'Age'],
-  ['anniversary', 'Anniversary'], ['bloodGroup', 'Blood Group'], ['fatherName', "Father's Name"], ['motherName', "Mother's Name"],
-  ['phone', 'Mobile'], ['city', 'City'], ['publicNote', 'Public Note'], ['adminNote', 'Internal Note'], ['status', 'Status'],
+  ['id', 'Member ID'], ['org', 'Organisation'], ['nameHi', 'Name Hindi'], ['nameEn', 'Name English'], ['dob', 'Date of Birth'],
+  ['age', 'Age'], ['anniversary', 'Anniversary'], ['bloodGroup', 'Blood Group'], ['fatherName', "Father's Name"],
+  ['motherName', "Mother's Name"], ['phone', 'Mobile'], ['city', 'City'], ['profession', 'Profession'],
+  ['professionDetail', 'Profession Details'], ['designation', 'Designation'], ['photo', 'Photo URL'],
+  ['publicNote', 'Public Note'], ['adminNote', 'Internal Note'], ['status', 'Status'],
 ];
 
 const millis = (ts) => (ts?.toMillis ? ts.toMillis() : 0);
 
-function MemberForm({ initial, isNew, existingIds, onSave, onCancel }) {
-  const [form, setForm] = useState(() => toForm(initial ?? EMPTY_MEMBER_FORM));
+function Thumb({ member, size = 36 }) {
+  const src = member.photo ? photoThumb(member.photo, size * 2) : null;
+  return src ? (
+    <img src={src} alt="" width={size} height={size} loading="lazy" referrerPolicy="no-referrer" className="rounded-full object-cover" style={{ width: size, height: size }} />
+  ) : (
+    <span className="grid place-items-center rounded-full bg-gold-soft text-xs font-semibold text-maroon" style={{ width: size, height: size }}>
+      {memberName(member).slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
+function MemberForm({ initial, isNew, existingIds, defaultOrg, onSave, onCancel }) {
+  const [form, setForm] = useState(() => toForm(initial ?? { ...EMPTY_MEMBER_FORM, org: defaultOrg }));
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -25,7 +40,7 @@ function MemberForm({ initial, isNew, existingIds, onSave, onCancel }) {
     e.preventDefault();
     const { record, errors: errs } = validateMemberForm(form, { today: todayKey(), isNew });
     if (isNew && !record.id) record.id = newMemberId(record.nameEn);
-    if (isNew && existingIds.has(record.id)) errs.id = 'यह सदस्य क्रमांक पहले से मौजूद है — ID already exists';
+    if (isNew && existingIds.has(record.id)) errs.id = 'This member ID already exists';
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setBusy(true);
@@ -37,29 +52,40 @@ function MemberForm({ initial, isNew, existingIds, onSave, onCancel }) {
   };
 
   const text = (k, label, props = {}) => (
-    <Field label={label} error={errors[k]}>
+    <Field label={label} error={en(errors[k])}>
       <TextInput value={form[k]} onChange={set(k)} invalid={Boolean(errors[k])} {...props} />
     </Field>
   );
+  const previewPhoto = form.photo && /^https:\/\//.test(form.photo) ? photoThumb(form.photo, 160) : null;
 
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-ink/50 p-4">
-      <form onSubmit={submit} className="card mx-auto max-w-2xl space-y-3 p-5" aria-label="सदस्य विवरण">
-        <h2 className="font-display text-xl text-maroon">{isNew ? 'नया सदस्य जोड़ें' : `संपादन: ${memberName(initial)}`}</h2>
+      <form onSubmit={submit} className="card mx-auto max-w-2xl space-y-3 p-5" aria-label="Member details">
+        <h2 className="font-display text-xl text-maroon">{isNew ? 'Add member' : `Edit: ${memberName(initial)}`}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {text('id', 'सदस्य क्रमांक (Member ID)', { disabled: !isNew, placeholder: isNew ? 'खाली छोड़ें = स्वतः' : '' })}
-          <Field label="स्थिति (Status)">
-            <select value={form.status} onChange={set('status')} className={inputClass}>
-              <option value="active">सक्रिय — प्रकाशित होगा</option>
-              <option value="inactive">निष्क्रिय — प्रकाशित नहीं</option>
+          <Field label="Organisation">
+            <select value={form.org} onChange={set('org')} className={inputClass}>
+              {ORGANIZATIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.en} — {o.hi}
+                </option>
+              ))}
             </select>
           </Field>
-          {text('nameHi', 'नाम (हिंदी)')}
+          <Field label="Status">
+            <select value={form.status} onChange={set('status')} className={inputClass}>
+              <option value="active">Active — published in the app</option>
+              <option value="inactive">Inactive — not published</option>
+            </select>
+          </Field>
+          {text('id', 'Member ID', { disabled: !isNew, placeholder: isNew ? 'Leave empty to generate' : '' })}
+          {text('designation', 'Designation (e.g. President)')}
           {text('nameEn', 'Name (English)')}
-          {text('dob', 'जन्म तिथि (DD/MM/YYYY)', { placeholder: '15/08/1990' })}
-          {text('age', 'आयु (केवल जन्म तिथि न हो तो)', { inputMode: 'numeric' })}
-          {text('anniversary', 'विवाह वर्षगांठ (DD/MM/YYYY)')}
-          <Field label="रक्त समूह" error={errors.bloodGroup}>
+          {text('nameHi', 'Name (Hindi)')}
+          {text('dob', 'Date of birth (DD/MM/YYYY)', { placeholder: '15/08/1990' })}
+          {text('age', 'Age (only if no date of birth)', { inputMode: 'numeric' })}
+          {text('anniversary', 'Anniversary (DD/MM/YYYY, optional)')}
+          <Field label="Blood group" error={en(errors.bloodGroup)}>
             <select value={form.bloodGroup} onChange={set('bloodGroup')} className={inputClass}>
               <option value="">—</option>
               {BLOOD_GROUPS.map((g) => (
@@ -67,23 +93,77 @@ function MemberForm({ initial, isNew, existingIds, onSave, onCancel }) {
               ))}
             </select>
           </Field>
-          {text('fatherName', 'पिता का नाम')}
-          {text('motherName', 'माता का नाम')}
-          {text('phone', 'मोबाइल / फ़ोन', { inputMode: 'tel' })}
-          {text('city', 'शहर / स्थान')}
+          {text('fatherName', "Father's name")}
+          {text('motherName', "Mother's name")}
+          {text('phone', 'Mobile / phone', { inputMode: 'tel' })}
+          {text('city', 'City / locality')}
+          <Field label="Profession" error={en(errors.profession)}>
+            <select value={form.profession} onChange={set('profession')} className={inputClass}>
+              <option value="">—</option>
+              {PROFESSIONS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.en}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {text('professionDetail', 'Profession details (firm, specialisation)')}
         </div>
-        {text('publicNote', 'सार्वजनिक टिप्पणी (ऐप में दिखेगी)')}
-        {text('adminNote', 'आंतरिक टिप्पणी (कभी प्रकाशित नहीं)')}
+        <div className="flex items-end gap-3">
+          <div className="min-w-0 flex-1">{text('photo', 'Photo URL (Cloudinary https link)', { inputMode: 'url' })}</div>
+          {previewPhoto && <img src={previewPhoto} alt="Photo preview" className="h-16 w-16 rounded-full object-cover" referrerPolicy="no-referrer" />}
+        </div>
+        {text('publicNote', 'Public note (shown in the app)')}
+        {text('adminNote', 'Internal note (never published)')}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onCancel} disabled={busy}>
-            रद्द करें
+            Cancel
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy ? 'सहेजा जा रहा है…' : 'सहेजें'}
+            {busy ? 'Saving…' : 'Save'}
           </Button>
         </div>
       </form>
     </div>
+  );
+}
+
+function PublishDialog({ prepared, published, busy, onConfirm, onCancel }) {
+  const [attested, setAttested] = useState(false);
+  const blocked = prepared.problems.length > 0;
+  return (
+    <ConfirmDialog
+      title="Publish directory"
+      confirmLabel={blocked ? 'Fix errors first' : 'Publish'}
+      busy={busy}
+      onConfirm={() => !blocked && attested && onConfirm()}
+      onCancel={onCancel}
+    >
+      <ul className="list-disc pl-5">
+        <li>Will be published: {prepared.publicMembers.length} active members (all organisations)</li>
+        <li>Not published: {prepared.inactiveCount} inactive</li>
+        <li>Currently in the app: {published ? `${published.recordCount} members` : 'nothing yet'}</li>
+        <li>Internal notes are never published.</li>
+      </ul>
+      {blocked && (
+        <Notice tone="error">
+          {prepared.problems.length} records are invalid — fix them first:{' '}
+          {prepared.problems.slice(0, 5).map((p) => `${p.id} (${p.problems[0]})`).join('; ')}
+        </Notice>
+      )}
+      <p className="text-xs text-muted">
+        Everyone who installs the app will see this list, including dates of birth, blood groups, parents&apos; names, phone
+        numbers and photos.
+      </p>
+      <label className="flex items-start gap-2">
+        <input type="checkbox" checked={attested} onChange={(e) => setAttested(e.target.checked)} className="mt-1" />
+        <span>
+          I confirm that appropriate permission has been obtained to publish these members&apos; details (and photos) publicly,
+          in line with the organisation&apos;s publication policy (docs/V2_DATA_POLICY.md).
+        </span>
+      </label>
+      {!attested && !blocked && <p className="text-xs text-sunday">Confirmation is required before publishing.</p>}
+    </ConfirmDialog>
   );
 }
 
@@ -94,6 +174,7 @@ export function MembersPage({ uid }) {
   const [message, setMessage] = useState(null);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [orgFilter, setOrgFilter] = useState('');
   const [editing, setEditing] = useState(null); // { member?, isNew }
   const [confirm, setConfirm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -106,7 +187,7 @@ export function MembersPage({ uid }) {
       setMembers(list);
       setPublished(pub);
     } catch (err) {
-      setError(`लोड नहीं हो सका: ${err.message}`);
+      setError(`Could not load members: ${err.message}`);
     }
   }, []);
   useEffect(() => {
@@ -118,13 +199,14 @@ export function MembersPage({ uid }) {
     const tokens = normalizeForSearch(query).split(' ').filter(Boolean);
     return members
       .filter((m) => !statusFilter || m.status === statusFilter)
+      .filter((m) => !orgFilter || orgOf(m) === orgFilter)
       .filter((m) => {
         if (!tokens.length) return true;
-        const hay = normalizeForSearch([m.id, m.nameHi, m.nameEn, m.fatherName, m.city, m.phone].join(' '));
+        const hay = normalizeForSearch([m.id, m.nameHi, m.nameEn, m.fatherName, m.city, m.phone, m.designation, professionLabel(m.profession, 'en')].join(' '));
         return tokens.every((t) => hay.includes(t));
       })
       .sort((a, b) => memberName(a).localeCompare(memberName(b), 'hi'));
-  }, [members, query, statusFilter]);
+  }, [members, query, statusFilter, orgFilter]);
 
   const existingIds = useMemo(() => new Set((members ?? []).map((m) => m.id)), [members]);
   const pendingChanges = useMemo(() => {
@@ -135,7 +217,7 @@ export function MembersPage({ uid }) {
   const save = async (record) => {
     await saveMember(record, uid);
     setEditing(null);
-    setMessage({ tone: 'success', text: `सहेजा गया: ${memberName(record)} — ऐप में दिखाने के लिए “प्रकाशित करें” दबाएँ।` });
+    setMessage({ tone: 'success', text: `Saved: ${memberName(record)}. Press “Publish” to update the app.` });
     await reload();
   };
 
@@ -145,24 +227,19 @@ export function MembersPage({ uid }) {
   };
 
   const exportCsv = () => {
-    const rows = [EXPORT_COLUMNS.map(([, h]) => h), ...(members ?? []).map((m) => EXPORT_COLUMNS.map(([k]) => m[k] ?? ''))];
+    const rows = [EXPORT_COLUMNS.map(([, h]) => h), ...(members ?? []).map((m) => EXPORT_COLUMNS.map(([k]) => (k === 'org' ? orgOf(m) : (m[k] ?? ''))))];
     downloadText(`maheshwari-directory-${todayKey()}.csv`, toCsv(rows));
-  };
-
-  const startPublish = () => {
-    const prepared = prepareDirectory(members ?? []);
-    setConfirm({ type: 'publish', prepared });
   };
 
   const runPublish = async () => {
     setBusy(true);
     try {
       const meta = await publishDirectory(confirm.prepared.publicMembers, uid);
-      setMessage({ tone: 'success', text: `प्रकाशित: ${meta.recordCount} सदस्य (संस्करण ${meta.version})। ऐप अगली बार खुलने पर अपडेट लेगा।` });
+      setMessage({ tone: 'success', text: `Published ${meta.recordCount} members (version ${meta.version}). Phones update the next time the app opens.` });
       setConfirm(null);
       await reload();
     } catch (err) {
-      setMessage({ tone: 'error', text: `प्रकाशन असफल, पिछला संस्करण यथावत: ${err.message}` });
+      setMessage({ tone: 'error', text: `Publishing failed — the previous version is still live: ${err.message}` });
     } finally {
       setBusy(false);
     }
@@ -172,7 +249,7 @@ export function MembersPage({ uid }) {
     setBusy(true);
     try {
       await deleteMember(confirm.member.id);
-      setMessage({ tone: 'success', text: `हटाया गया: ${memberName(confirm.member)} — प्रकाशन के बाद ऐप से भी हट जाएगा।` });
+      setMessage({ tone: 'success', text: `Deleted ${memberName(confirm.member)}. It disappears from the app after the next publish.` });
       setConfirm(null);
       await reload();
     } finally {
@@ -180,18 +257,24 @@ export function MembersPage({ uid }) {
     }
   };
 
+  const counts = useMemo(() => {
+    const c = {};
+    for (const m of members ?? []) c[orgOf(m)] = (c[orgOf(m)] ?? 0) + 1;
+    return c;
+  }, [members]);
+
   return (
     <>
       <Card
-        title="माहेश्वरी परिवार — सदस्य"
+        title="Member directory"
         actions={
           <>
-            <Button onClick={() => setEditing({ isNew: true })}>+ नया सदस्य</Button>
+            <Button onClick={() => setEditing({ isNew: true })}>+ Add member</Button>
             <Button variant="secondary" onClick={exportCsv} disabled={!members?.length}>
-              CSV निर्यात
+              Export CSV
             </Button>
-            <Button onClick={startPublish} disabled={!members}>
-              प्रकाशित करें
+            <Button onClick={() => setConfirm({ type: 'publish', prepared: prepareDirectory(members ?? []) })} disabled={!members}>
+              Publish
             </Button>
           </>
         }
@@ -199,24 +282,30 @@ export function MembersPage({ uid }) {
         {error && <Notice tone="error">{error}</Notice>}
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
         <p className="mt-2 text-sm text-muted">
-          {members ? `${members.length} रिकॉर्ड (${members.filter((m) => m.status === 'active').length} सक्रिय)` : 'लोड हो रहा है…'}
-          {published
-            ? ` · प्रकाशित: ${published.recordCount} सदस्य, ${new Date(published.version).toLocaleString('hi-IN')}`
-            : ' · अभी तक प्रकाशित नहीं'}
-          {pendingChanges > 0 && ` · ${pendingChanges} बदलाव अप्रकाशित`}
+          {members ? `${members.length} records (${members.filter((m) => m.status === 'active').length} active)` : 'Loading…'}
+          {published ? ` · In the app: ${published.recordCount} members, published ${new Date(published.version).toLocaleString('en-IN')}` : ' · Not published yet'}
+          {pendingChanges > 0 && ` · ${pendingChanges} unpublished changes`}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <TextInput
             type="search"
-            placeholder="खोजें — नाम, क्रमांक, पिता, शहर, फ़ोन"
+            placeholder="Search name, ID, father, city, phone, profession"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="max-w-md"
           />
+          <select value={orgFilter} onChange={(e) => setOrgFilter(e.target.value)} className={`${inputClass} w-auto`}>
+            <option value="">All organisations</option>
+            {ORGANIZATIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.en} ({counts[o.id] ?? 0})
+              </option>
+            ))}
+          </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${inputClass} w-auto`}>
-            <option value="">सभी</option>
-            <option value="active">सक्रिय</option>
-            <option value="inactive">निष्क्रिय</option>
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
       </Card>
@@ -226,26 +315,36 @@ export function MembersPage({ uid }) {
           <table className="w-full text-left text-sm">
             <thead className="bg-paper text-xs text-muted">
               <tr>
-                <th className="px-3 py-2">क्रमांक</th>
-                <th className="px-3 py-2">नाम</th>
-                <th className="px-3 py-2">पिता</th>
-                <th className="px-3 py-2">शहर</th>
-                <th className="px-3 py-2">रक्त</th>
-                <th className="px-3 py-2">स्थिति</th>
                 <th className="px-3 py-2">
-                  <span className="sr-only">कार्य</span>
+                  <span className="sr-only">Photo</span>
+                </th>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Organisation</th>
+                <th className="px-3 py-2">Profession</th>
+                <th className="px-3 py-2">City</th>
+                <th className="px-3 py-2">Blood</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {filtered.slice(0, limit).map((m) => (
                 <tr key={m.id}>
-                  <td className="px-3 py-2 font-mono text-xs">{m.id}</td>
                   <td className="px-3 py-2">
-                    {m.nameHi || '—'}
-                    {m.nameEn && <span className="block text-xs text-muted">{m.nameEn}</span>}
+                    <Thumb member={m} />
                   </td>
-                  <td className="px-3 py-2">{m.fatherName || '—'}</td>
+                  <td className="px-3 py-2">
+                    {m.nameEn || m.nameHi || '—'}
+                    {m.nameEn && m.nameHi && <span className="block text-xs text-muted">{m.nameHi}</span>}
+                    <span className="block font-mono text-xs text-muted">
+                      {m.id}
+                      {m.designation && ` · ${m.designation}`}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">{orgLabel(orgOf(m), 'en')}</td>
+                  <td className="px-3 py-2">{m.profession ? professionLabel(m.profession, 'en') : '—'}</td>
                   <td className="px-3 py-2">{m.city || '—'}</td>
                   <td className="px-3 py-2">{m.bloodGroup || '—'}</td>
                   <td className="px-3 py-2">
@@ -253,13 +352,13 @@ export function MembersPage({ uid }) {
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <Button variant="ghost" onClick={() => setEditing({ member: m, isNew: false })}>
-                      संपादन
+                      Edit
                     </Button>
                     <Button variant="ghost" onClick={() => toggleStatus(m)}>
-                      {m.status === 'active' ? 'निष्क्रिय करें' : 'सक्रिय करें'}
+                      {m.status === 'active' ? 'Deactivate' : 'Activate'}
                     </Button>
                     <Button variant="ghost" className="!text-sunday" onClick={() => setConfirm({ type: 'delete', member: m })}>
-                      हटाएँ
+                      Delete
                     </Button>
                   </td>
                 </tr>
@@ -269,11 +368,11 @@ export function MembersPage({ uid }) {
           {filtered.length > limit && (
             <div className="p-3 text-center">
               <Button variant="secondary" onClick={() => setLimit((l) => l + 200)}>
-                और दिखाएँ ({filtered.length - limit})
+                Show more ({filtered.length - limit})
               </Button>
             </div>
           )}
-          {filtered.length === 0 && <p className="p-4 text-center text-muted">कोई रिकॉर्ड नहीं।</p>}
+          {filtered.length === 0 && <p className="p-4 text-center text-muted">No records.</p>}
         </div>
       )}
 
@@ -282,6 +381,7 @@ export function MembersPage({ uid }) {
           initial={editing.member}
           isNew={editing.isNew}
           existingIds={existingIds}
+          defaultOrg={orgFilter || 'yuva'}
           onSave={save}
           onCancel={() => setEditing(null)}
         />
@@ -289,17 +389,17 @@ export function MembersPage({ uid }) {
 
       {confirm?.type === 'delete' && (
         <ConfirmDialog
-          title="सदस्य स्थायी रूप से हटाएँ?"
+          title="Delete member permanently?"
           danger
-          confirmLabel="हटाएँ"
+          confirmLabel="Delete"
           confirmText={confirm.member.id}
           busy={busy}
           onConfirm={runDelete}
           onCancel={() => setConfirm(null)}
         >
           <p>
-            <strong>{memberName(confirm.member)}</strong> ({confirm.member.id}) का रिकॉर्ड हटेगा। केवल छिपाने के लिए “निष्क्रिय करें”
-            बेहतर है।
+            The record of <strong>{memberName(confirm.member)}</strong> ({confirm.member.id}) will be deleted. To only hide it from the
+            app, “Deactivate” is usually better.
           </p>
         </ConfirmDialog>
       )}
@@ -308,43 +408,5 @@ export function MembersPage({ uid }) {
         <PublishDialog prepared={confirm.prepared} published={published} busy={busy} onConfirm={runPublish} onCancel={() => setConfirm(null)} />
       )}
     </>
-  );
-}
-
-function PublishDialog({ prepared, published, busy, onConfirm, onCancel }) {
-  const [attested, setAttested] = useState(false);
-  const blocked = prepared.problems.length > 0;
-  return (
-    <ConfirmDialog
-      title="निर्देशिका प्रकाशित करें (Publish directory)"
-      confirmLabel={blocked ? 'त्रुटियाँ ठीक करें' : 'प्रकाशित करें'}
-      busy={busy}
-      onConfirm={() => !blocked && attested && onConfirm()}
-      onCancel={onCancel}
-    >
-      <ul className="list-disc pl-5">
-        <li>प्रकाशित होंगे: {prepared.publicMembers.length} सक्रिय सदस्य</li>
-        <li>प्रकाशित नहीं: {prepared.inactiveCount} निष्क्रिय</li>
-        <li>वर्तमान ऐप संस्करण: {published ? `${published.recordCount} सदस्य` : 'कोई नहीं'}</li>
-        <li>आंतरिक टिप्पणियाँ कभी प्रकाशित नहीं होतीं।</li>
-      </ul>
-      {blocked && (
-        <Notice tone="error">
-          {prepared.problems.length} रिकॉर्ड अमान्य हैं — पहले ठीक करें:{' '}
-          {prepared.problems.slice(0, 5).map((p) => `${p.id} (${p.problems[0]})`).join('; ')}
-        </Notice>
-      )}
-      <p className="text-xs text-muted">
-        यह सूची ऐप डाउनलोड करने वाले हर व्यक्ति को दिखेगी (जन्म तिथि, रक्त समूह, माता-पिता के नाम, फ़ोन सहित)।
-      </p>
-      <label className="flex items-start gap-2">
-        <input type="checkbox" checked={attested} onChange={(e) => setAttested(e.target.checked)} className="mt-1" />
-        <span>
-          मैं पुष्टि करता/करती हूँ कि इन सदस्यों की जानकारी सार्वजनिक रूप से प्रकाशित करने की उचित अनुमति ली गई है, और समाज की
-          प्रकाशन नीति (docs/V2_DATA_POLICY.md) का पालन किया गया है।
-        </span>
-      </label>
-      {!attested && !blocked && <p className="text-xs text-sunday">प्रकाशन से पहले पुष्टि आवश्यक है।</p>}
-    </ConfirmDialog>
   );
 }

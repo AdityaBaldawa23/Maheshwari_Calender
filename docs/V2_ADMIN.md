@@ -90,7 +90,15 @@ The community's existing member sheet can be uploaded **as is**:
 * **Anniversary is optional.** `N/A`, `NA`, `-`, `#N/A`, `nil`, `नहीं` or an empty cell all mean "no value" (in any column).
 * ALL-CAPS English names are stored in Title Case ("Abhijit Nitin Attal"). Hindi names are kept as written.
 * No city column? Enter **डिफ़ॉल्ट शहर** (e.g. सांगली) on the mapping screen. It is applied to new rows only.
-* Extra optional columns (`Member ID`, `Father's Name`, `Mother's Name`, `City`, `Note`) can be added at any time.
+* Extra optional columns can be added at any time: `Profession`, `Profession Details`, `Designation` (e.g. President),
+  `Photo URL`, `Member ID`, `Father's Name`, `Mother's Name`, `City`, `Note`.
+* **Organisation:** each import goes into one organisation, chosen on the first screen (Yuva Sangathan, Maha Sabha,
+  Mahila Sangathan, Pragati Mandal). They are the sub-tabs of परिवार in the app. Duplicate checks and update matching stay
+  inside that organisation, so a person active in two organisations is simply in both lists.
+* **Photos:** upload them to Cloudinary and put each image's full `https://res.cloudinary.com/…` link in the `Photo URL`
+  column. The app downloads small face-centred thumbnails automatically (Cloudinary transformation `c_fill,g_face`), and
+  initials are shown when a member has no photo. Any other https image host also works, without the thumbnail saving.
+* **Profession:** write any wording; it is mapped to one of 30 categories. See [PROFESSIONS.md](PROFESSIONS.md).
   “टेम्पलेट डाउनलोड” gives exactly this layout.
 
 The first non-empty row must be the header. Recognised headers (case/punctuation-insensitive; anything else can be
@@ -107,6 +115,10 @@ mapped manually or ignored):
 | Father / Mother | `पिता का नाम`, `Father's Name`, `माता का नाम` | ≤100 chars |
 | Phone | `Mobile`, `मोबाइल`, `Contact` | 10-digit mobile (→ `+91…`), landline with STD code; first of several numbers kept (warning) |
 | City | `City`, `शहर`, `गाँव`, `स्थान` | ≤100 chars |
+| Profession | `Profession`, `Occupation`, `Business`, `व्यवसाय` | mapped to a category; informative wording kept as details; unknown → Other (warning) |
+| Profession details | `Profession Details`, `Firm Name`, `Company` | ≤120 chars |
+| Designation | `Designation`, `Post`, `पद` | ≤80 chars |
+| Photo URL | `Photo`, `Photo URL`, `Image`, `फोटो` | full https link (Cloudinary http links are upgraded to https) |
 | Public note / Internal note | `टिप्पणी` / `Internal note` | public ≤300 (shown in app), internal ≤500 (never published) |
 
 Formulas are never evaluated (`.xlsx` cached values only); formula-like text (`=…`, `@…`) is kept as plain text with a
@@ -151,6 +163,36 @@ Each is edited as a **draft** (`drafts/*`, invisible to the app) → **validated
   after checking against a trusted panchang. Reminders on devices are re-planned automatically (deterministic IDs → no duplicates).
 * Ads & notices: title/description (hi/en), optional `https://` image (≈1280×640, <150 KB), link (tel / WhatsApp / mailto /
   https), start/end date, order, active.
+
+## 6a. Birthday & anniversary wishes (posters)
+
+**Birthday & anniversary wishes** lists everyone with a birthday or wedding anniversary on the chosen date (all
+organisations or one). **Create poster** draws a 1080×1350 greeting poster in the browser: the member's photo, name,
+the greeting in Hindi and English, and the organisation name. Only the photo and name change between members. Options:
+name in Hindi or English, show the age or the years married, a custom message, and the organisation name (remembered in
+that browser).
+
+Sending:
+* **Phone (recommended):** open the portal on your phone and tap **Share to WhatsApp groups…**. The share sheet opens;
+  pick WhatsApp, then tick one or several community groups. The poster and message are sent together.
+* **Computer:** **Copy image**, then press one of the saved **Open “group”** buttons (WhatsApp Web/Desktop) and paste.
+  Group invite links (`https://chat.whatsapp.com/…`) are saved once under "Add community WhatsApp groups". They are
+  stored privately in `drafts/whatsappGroups`.
+* **Message <name> on WhatsApp** opens a personal chat with that member and the greeting text.
+
+WhatsApp offers no public way for an app or website to post into a group automatically. Every send needs one tap
+by the admin. This also means no WhatsApp Business account or paid API is needed.
+
+## 6b. Public holidays
+
+Occasions with `holiday: true` are shown in red in the app. The fixed national/Maharashtra holidays are in
+`src/data/occasions/recurring.json`: Republic Day, Shivaji Jayanti, Ambedkar Jayanti, Maharashtra Day, Independence Day,
+Gandhi Jayanti, Christmas. Festival holidays are generated from `scripts/festival-rules.json`: Mahashivratri, Holi,
+Gudi Padwa, Ram Navami, Mahavir Jayanti, Buddha Purnima, Ganesh Chaturthi, Dussehra, Diwali, Balipratipada,
+Guru Nanak Jayanti, and Good Friday (computed from Easter).
+Holidays that depend on moon sighting (Ramzan Eid, Bakri Eid, Muharram, Id-e-Milad) and Parsi New Year are added each year
+under **Calendar occasions → New occasion** with **Public holiday** ticked. Check the year's official RBI / Maharashtra
+holiday notification and adjust.
 
 ## 7. Versioning, rollback and recovery
 

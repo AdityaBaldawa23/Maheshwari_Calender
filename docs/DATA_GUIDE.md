@@ -36,6 +36,7 @@ Open `src/data/occasions/<year>.json` and add one line inside `"occasions": [ �
 | `category` | yes | `maheshwari`, `marwadi`, `festival`, `vrat`, `jayanti` (birth anniversary), `punyatithi` (death anniversary), `event`, `national` |
 | `importance` | yes | `high` (highlighted in the calendar), `medium`, `low` |
 | `reminder` | no | `{"enabled": true, "defaultTime": "07:00"}` — `enabled:false` means no reminder is ever offered |
+| `holiday` | no | `true` for a public / bank holiday — the date is shown in red |
 | `source` | no | `manual` or `generated` (informational) |
 
 **Same date every year** (e.g. 15 August)? Add it once to `src/data/occasions/recurring.json` with

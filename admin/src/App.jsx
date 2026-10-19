@@ -3,6 +3,7 @@ import { useAuth } from './auth.jsx';
 import { Button, Field, Notice, TextInput } from './components/ui.jsx';
 import { MembersPage } from './pages/MembersPage.jsx';
 import { ImportPage } from './pages/ImportPage.jsx';
+import { WishesPage } from './pages/WishesPage.jsx';
 import { EmergencyAdminPage } from './pages/EmergencyAdminPage.jsx';
 import { OccasionsAdminPage } from './pages/OccasionsAdminPage.jsx';
 import { ContentAdminPage } from './pages/ContentAdminPage.jsx';
@@ -10,13 +11,14 @@ import { HistoryPage } from './pages/HistoryPage.jsx';
 import { AdminsPage } from './pages/AdminsPage.jsx';
 
 const SECTIONS = [
-  { id: 'members', label: 'सदस्य निर्देशिका', en: 'Directory', Page: MembersPage },
-  { id: 'import', label: 'Excel / CSV आयात', en: 'Import', Page: ImportPage },
-  { id: 'emergency', label: 'आपातकालीन संपर्क', en: 'Emergency', Page: EmergencyAdminPage },
-  { id: 'occasions', label: 'कैलेंडर अवसर', en: 'Occasions', Page: OccasionsAdminPage },
-  { id: 'content', label: 'विज्ञापन एवं सूचनाएँ', en: 'Ads & notices', Page: ContentAdminPage },
-  { id: 'history', label: 'इतिहास', en: 'History', Page: HistoryPage },
-  { id: 'admins', label: 'व्यवस्थापक', en: 'Admins', Page: AdminsPage },
+  { id: 'members', label: 'Member directory', Page: MembersPage },
+  { id: 'import', label: 'Excel / CSV import', Page: ImportPage },
+  { id: 'wishes', label: 'Birthday & anniversary wishes', Page: WishesPage },
+  { id: 'emergency', label: 'Emergency contacts', Page: EmergencyAdminPage },
+  { id: 'occasions', label: 'Calendar occasions', Page: OccasionsAdminPage },
+  { id: 'content', label: 'Ads & notices', Page: ContentAdminPage },
+  { id: 'history', label: 'History', Page: HistoryPage },
+  { id: 'admins', label: 'Administrators', Page: AdminsPage },
 ];
 
 function LoginPage() {
@@ -33,7 +35,7 @@ function LoginPage() {
     try {
       await signIn(email.trim(), password);
     } catch {
-      setMessage({ tone: 'error', text: 'लॉगिन असफल — ईमेल या पासवर्ड गलत है। (Sign-in failed)' });
+      setMessage({ tone: 'error', text: 'Sign-in failed — check the email and password.' });
     } finally {
       setBusy(false);
     }
@@ -42,28 +44,28 @@ function LoginPage() {
   return (
     <main className="mx-auto grid min-h-dvh max-w-sm place-items-center p-4">
       <form onSubmit={submit} className="card w-full space-y-3 p-5">
-        <h1 className="font-display text-2xl text-maroon">व्यवस्थापक लॉगिन</h1>
-        <p className="text-xs text-muted">केवल अधिकृत व्यवस्थापकों के लिए। कोई सार्वजनिक पंजीकरण नहीं। (Authorized administrators only.)</p>
-        <Field label="ईमेल (Email)">
+        <h1 className="font-display text-2xl text-maroon">Administrator sign-in</h1>
+        <p className="text-xs text-muted">For authorised administrators only. There is no public registration.</p>
+        <Field label="Email">
           <TextInput type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </Field>
-        <Field label="पासवर्ड (Password)">
+        <Field label="Password">
           <TextInput type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </Field>
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
         <Button type="submit" className="w-full" disabled={busy}>
-          {busy ? 'प्रतीक्षा करें…' : 'लॉगिन'}
+          {busy ? 'Please wait…' : 'Sign in'}
         </Button>
         <Button
           variant="ghost"
           className="w-full"
           onClick={async () => {
-            if (!email) return setMessage({ tone: 'error', text: 'पहले ईमेल लिखें।' });
+            if (!email) return setMessage({ tone: 'error', text: 'Enter your email first.' });
             await resetPassword(email.trim()).catch(() => {});
-            setMessage({ tone: 'info', text: 'यदि यह खाता मौजूद है तो पासवर्ड रीसेट ईमेल भेजा गया है।' });
+            setMessage({ tone: 'info', text: 'If this account exists, a password-reset email has been sent.' });
           }}
         >
-          पासवर्ड भूल गए?
+          Forgot password?
         </Button>
       </form>
     </main>
@@ -74,19 +76,19 @@ export function AdminApp() {
   const auth = useAuth();
   const [section, setSection] = useState('members');
 
-  if (auth.status === 'loading') return <p className="p-6 text-muted">लोड हो रहा है…</p>;
+  if (auth.status === 'loading') return <p className="p-6 text-muted">Loading…</p>;
   if (auth.status === 'signedOut') return <LoginPage />;
   if (auth.status === 'notAdmin') {
     return (
       <main className="mx-auto max-w-md p-6">
         <div className="card space-y-3 p-5">
-          <h1 className="font-display text-xl text-maroon">अनुमति नहीं</h1>
+          <h1 className="font-display text-xl text-maroon">Access not granted</h1>
           <p className="text-sm">
-            इस खाते ({auth.user?.email}) को व्यवस्थापक अधिकार नहीं दिए गए हैं। मुख्य व्यवस्थापक से संपर्क करें। UID:{' '}
+            This account ({auth.user?.email}) has no administrator rights. Ask the main administrator to add your UID:{' '}
             <code className="break-all">{auth.user?.uid}</code>
           </p>
           <Button variant="secondary" onClick={auth.signOut}>
-            लॉग आउट
+            Sign out
           </Button>
         </div>
       </main>
@@ -96,17 +98,17 @@ export function AdminApp() {
   const { Page } = SECTIONS.find((s) => s.id === section);
   return (
     <div className="min-h-dvh md:flex">
-      <aside className="bg-maroon text-white md:min-h-dvh md:w-60 md:shrink-0">
+      <aside className="bg-maroon text-white md:min-h-dvh md:w-64 md:shrink-0">
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <div>
-            <p className="font-display text-lg leading-tight">माहेश्वरी कैलेंडर</p>
-            <p className="text-xs text-gold-soft">व्यवस्थापक पोर्टल</p>
+            <p className="font-display text-lg leading-tight">Maheshwari Calendar</p>
+            <p className="text-xs text-gold-soft">Admin portal</p>
           </div>
           <Button variant="ghost" className="!text-gold-soft md:hidden" onClick={auth.signOut}>
-            लॉग आउट
+            Sign out
           </Button>
         </div>
-        <nav aria-label="पोर्टल मेनू" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible">
+        <nav aria-label="Portal sections" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
@@ -117,14 +119,14 @@ export function AdminApp() {
                 section === s.id ? 'bg-white/15 font-semibold' : 'hover:bg-white/10'
               }`}
             >
-              {s.label} <span className="text-xs text-gold-soft/80">· {s.en}</span>
+              {s.label}
             </button>
           ))}
         </nav>
         <div className="hidden px-4 py-3 text-xs text-gold-soft/90 md:block">
           <span className="block break-all">{auth.user?.email}</span>
           <Button variant="ghost" className="!px-0 !text-gold-soft" onClick={auth.signOut}>
-            लॉग आउट
+            Sign out
           </Button>
         </div>
       </aside>

@@ -2,13 +2,17 @@
 
 A Hindi-first calendar and community app for the Maheshwari / Marwadi community:
 
-- **पंचांग:** a traditional Panchang month view (weekdays down the left), tithi, paksha, month, Vikram Samvat,
+- **पंचांग:** a colourful traditional Panchang month view (weekdays down the left in graha colours, public holidays in
+  red, Hindi or English dates), tithi, paksha, month, Vikram Samvat,
   Purnima/Amavasya start–end times, festivals, local reminders. Fully offline from bundled data.
 - **अवसर:** the month's occasions.
-- **माहेश्वरी परिवार:** a public directory, downloaded from Firebase, cached on the phone, searchable and filterable offline.
+- **माहेश्वरी परिवार:** public directories of Yuva Sangathan, Maha Sabha, Mahila Sangathan and Pragati Mandal, with photos,
+  professions (30 categories), designations, birthdays & anniversaries; downloaded from Firebase, cached on the phone,
+  searchable and filterable offline (blood group, city, profession).
 - **आपातकालीन संपर्क:** police/ambulance/fire (bundled, offline), 4 community contacts and 4 hospitals.
 - **अधिक:** community notices & advertisements, reminder settings.
-- **Admin portal** (separate web app): Excel/CSV import, member editing, emergency contacts, occasions, ads/notices,
+- **Admin portal** (separate web app, English): Excel/CSV import, member editing, birthday/anniversary greeting posters
+  shared to WhatsApp groups, emergency contacts, occasions & holidays, ads/notices,
   draft → validate → preview → publish, history and rollback.
 
 Stack: React 19 · Vite 6 · Tailwind CSS 4 · Capacitor 7 (Android, target SDK 36) · Firebase (Auth, Firestore, Hosting) · Vitest.
@@ -91,6 +95,7 @@ V1 is tagged `v1.0.0` (commit `1772fcc` on `main`): `git checkout v1.0.0 && npm 
 
 - [docs/V2_ADMIN.md](docs/V2_ADMIN.md) — Firebase setup, admin provisioning, schema/rules, Excel import, publishing, rollback, costs
 - [docs/V2_DATA_POLICY.md](docs/V2_DATA_POLICY.md) — directory publication & consent policy (owner must confirm)
+- [docs/PROFESSIONS.md](docs/PROFESSIONS.md) — the 30 profession categories and the words mapped to each
 - [docs/DATA_GUIDE.md](docs/DATA_GUIDE.md) — bundled calendar data: occasions, tithis, new years
 - [docs/RELEASE.md](docs/RELEASE.md) — Android (and iOS) builds, signing, release checklist
 - [docs/PLAY_STORE.md](docs/PLAY_STORE.md) — listing, data safety, content rating
