@@ -18,17 +18,20 @@
  */
 import { fnv1a } from '../hash.js';
 import { ageOn } from '../directorySchema.js';
+import { matchProfession, professionLabel } from '../professions.js';
+import { DEFAULT_ORG, ORG_IDS, orgOf } from '../organizations.js';
 import {
   cleanText, isBlank, isDevanagari, isPlaceholder, looksLikeFormula, normalizeAge, normalizeBloodGroup, normalizeDate,
-  normalizeMemberId, normalizePhone, normalizeText, titleCaseIfAllCaps,
+  normalizeMemberId, normalizePhone, normalizePhotoUrl, normalizeText, titleCaseIfAllCaps,
 } from './normalize.js';
 
 /** Fields of the admin master record that an import can set. */
 export const IMPORTABLE_FIELDS = [
   'nameHi', 'nameEn', 'dob', 'age', 'anniversary', 'bloodGroup', 'fatherName', 'motherName', 'phone', 'city', 'publicNote', 'adminNote',
+  'photo', 'profession', 'professionDetail', 'designation',
 ];
 
-const TEXT_LIMITS = { nameHi: 100, nameEn: 100, fatherName: 100, motherName: 100, city: 100, publicNote: 300, adminNote: 500 };
+const TEXT_LIMITS = { nameHi: 100, nameEn: 100, fatherName: 100, motherName: 100, city: 100, publicNote: 300, adminNote: 500, professionDetail: 120, designation: 80 };
 /** Fields whose ALL-CAPS English values ("ADITYA ANAND MALU") are stored in Title Case. */
 const TITLE_CASE_FIELDS = new Set(['nameEn', 'fatherName', 'motherName', 'city']);
 
@@ -91,6 +94,19 @@ export function parseRow(cells, mapping, { today }) {
       case 'phone':
         set('phone', normalizePhone(value));
         break;
+      case 'photo':
+        set('photo', normalizePhotoUrl(value));
+        break;
+      case 'profession': {
+        const text = cleanText(value).slice(0, TEXT_LIMITS.professionDetail);
+        const id = matchProfession(text);
+        record.profession = id ?? 'other';
+        // Keep the original wording as detail unless it is just the category name.
+        const isLabel = id && [professionLabel(id, 'en').toLowerCase(), professionLabel(id, 'hi'), id].includes(text.toLowerCase());
+        if (!isLabel) record._professionText = text;
+        if (!id) warnings.push({ field: 'profession', message: `“${text}” किसी श्रेणी से मेल नहीं — stored as Other (detail kept)` });
+        break;
+      }
       default:
         if (TEXT_LIMITS[target]) {
           const r = normalizeText(value, TEXT_LIMITS[target]);
@@ -104,6 +120,8 @@ export function parseRow(cells, mapping, { today }) {
   if (record._autoNameEn && !record.nameEn) record.nameEn = record._autoNameEn;
   delete record._autoNameHi;
   delete record._autoNameEn;
+  if (record._professionText && !record.professionDetail) record.professionDetail = record._professionText;
+  delete record._professionText;
 
   if (!record.nameHi && !record.nameEn && !errors.some((e) => e.field.startsWith('name'))) {
     errors.push({ field: 'name', message: 'नाम आवश्यक है — name is required' });
@@ -134,8 +152,10 @@ const identityKeys = (r) => {
  * person gets the SAME ID when an updated copy of the sheet is uploaded again.
  * Rows with no identifying detail fall back to file fingerprint + row number.
  */
-function generatedId(record, fingerprint, rowNumber, taken) {
-  const basis = identityKeys(record)[0] ?? `${fingerprint}:${rowNumber}`;
+function generatedId(record, fingerprint, rowNumber, taken, org) {
+  const identity = identityKeys(record)[0];
+  // Each organisation keeps its own records, so the organisation is part of the identity.
+  const basis = identity ? (org === DEFAULT_ORG ? identity : `${org}|${identity}`) : `${fingerprint}:${rowNumber}`;
   let id = `M${fnv1a(basis).toUpperCase()}`;
   for (let n = 2; taken.has(id); n++) id = `M${fnv1a(`${basis}#${n}`).toUpperCase()}`;
   taken.add(id);
@@ -157,7 +177,10 @@ const sameValue = (a, b) => (a ?? '') === (b ?? '');
  * @param {string} input.fingerprint                   stable hash of the uploaded file
  * @param {string} input.today                         "YYYY-MM-DD"
  */
-export function buildImportPlan({ dataRows, mapping, existing, mode, options = {}, fingerprint, today }) {
+export function buildImportPlan({ dataRows, mapping, existing: allExisting, mode, options = {}, fingerprint, today }) {
+  // Imports target one organisation; matching and duplicate checks stay within it.
+  const org = ORG_IDS.includes(options.org) ? options.org : DEFAULT_ORG;
+  const existing = new Map([...allExisting].filter(([, m]) => orgOf(m) === org));
   const { allowCreate = false, clearBlank = false, matchByIdentity = false } = options;
   const defaultCity = cleanText(options.defaultCity ?? '').slice(0, TEXT_LIMITS.city);
   const parsed = dataRows.map(({ rowNumber, cells }) => ({ rowNumber, ...parseRow(cells, mapping, { today }) }));
@@ -188,7 +211,7 @@ export function buildImportPlan({ dataRows, mapping, existing, mode, options = {
     return [...ids];
   };
 
-  const taken = new Set(existing.keys());
+  const taken = new Set(allExisting.keys()); // IDs are unique across all organisations
   for (const id of idRows.keys()) taken.add(id);
   const seenIdentity = new Map(); // identity key → first rowNumber (rows without IDs)
   const rows = [];
@@ -217,10 +240,15 @@ export function buildImportPlan({ dataRows, mapping, existing, mode, options = {
         row.reason = `मौजूदा सदस्य ${duplicateOfExisting} जैसा — possible duplicate of existing member ${duplicateOfExisting}`;
         row.existingId = duplicateOfExisting;
       } else {
-        const id = p.record.id || generatedId(p.record, fingerprint, p.rowNumber, taken);
+        if (p.record.id && allExisting.has(p.record.id)) {
+          row.status = 'duplicate';
+          row.reason = `सदस्य क्रमांक ${p.record.id} दूसरे संगठन में है — ID already used by another organisation`;
+          return;
+        }
+        const id = p.record.id || generatedId(p.record, fingerprint, p.rowNumber, taken, org);
         row.status = 'new';
         row.memberId = id;
-        const data = { ...p.record, id, status: 'active' };
+        const data = { ...p.record, id, org, status: 'active' };
         if (!data.city && defaultCity) data.city = defaultCity;
         writes.push({ kind: 'create', id, data, rowNumber: p.rowNumber });
       }

@@ -79,6 +79,7 @@ function checkReminder(reminder) {
 
 function checkOccasionCommon(o) {
   const problems = [];
+  if (o.holiday !== undefined && typeof o.holiday !== 'boolean') problems.push('holiday must be true/false');
   if (!isNonEmptyString(o.id) || !ID_PATTERN.test(o.id)) problems.push(`id must be lowercase-with-hyphens (got ${o.id})`);
   problems.push(...checkLocalizedText(o.title, 'title'));
   problems.push(...checkLocalizedText(o.description, 'description', { required: false }));

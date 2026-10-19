@@ -13,6 +13,7 @@ import { CelebrationList } from './Celebrations.jsx';
 import { MemberSheet } from './MemberSheet.jsx';
 import { useCelebrationIndex } from '../hooks/useCelebrations.js';
 import { celebrationsOn } from '../services/celebrations.js';
+import { useDateLang } from '../hooks/useDateLang.js';
 import { CategoryLabel } from './OccasionTag.jsx';
 import { BellIcon, BellOffIcon, ChevronLeft, ChevronRight, SunriseIcon, SunsetIcon } from './Icons.jsx';
 
@@ -95,6 +96,7 @@ function OccasionReminder({ occasion }) {
 export function DayDetailSheet({ dateKey, today, onClose, onNavigate }) {
   const info = useDateInfo(dateKey);
   const isToday = dateKey === today;
+  const lang = useDateLang();
   const celebrationIndex = useCelebrationIndex();
   const celebrations = useMemo(() => celebrationsOn(celebrationIndex, dateKey), [celebrationIndex, dateKey]);
   const [openMember, setOpenMember] = useState(null);
@@ -116,9 +118,9 @@ export function DayDetailSheet({ dateKey, today, onClose, onNavigate }) {
               <span className="inline-block rounded-full bg-maroon px-2 text-xs leading-5 text-white">आज</span>
             )}
             <h2 id="day-sheet-title" className="font-display text-2xl leading-snug text-maroon">
-              {formatDate(dateKey)}
+              {formatDate(dateKey, lang)}
             </h2>
-            <p className="text-sm text-muted">{info ? weekdayName(info.weekday) : ' '}</p>
+            <p className="text-sm text-muted">{info ? weekdayName(info.weekday, lang) : ' '}</p>
           </div>
           <button
             type="button"
@@ -192,6 +194,9 @@ export function DayDetailSheet({ dateKey, today, onClose, onNavigate }) {
                 {info.occasions.map((o) => (
                   <li key={o.id} className="rounded-2xl border border-line p-3">
                     <p className="font-semibold leading-snug text-ink">{txt(o.title)}</p>
+                    {o.holiday && (
+                      <span className="mr-2 inline-block rounded bg-holiday px-1.5 text-xs leading-5 font-semibold text-white">सार्वजनिक अवकाश</span>
+                    )}
                     <CategoryLabel category={o.category} />
                     {o.description && <p className="mt-1 text-sm leading-relaxed text-ink/85">{txt(o.description)}</p>}
                     <OccasionReminder occasion={o} />

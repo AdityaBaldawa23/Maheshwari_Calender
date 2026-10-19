@@ -133,3 +133,17 @@ export function titleCaseIfAllCaps(s) {
   if (typeof s !== 'string' || !/[A-Z]/.test(s) || /[a-z]/.test(s) || /[^\x20-\x7e]/.test(s)) return s;
   return s.toLowerCase().replace(/(^|[\s.'-])([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase());
 }
+
+/** Photo link: https URL (Cloudinary http links are upgraded to https). */
+export function normalizePhotoUrl(v) {
+  if (isBlank(v)) return { value: '' };
+  let s = cleanText(v);
+  if (/^http:\/\/res\.cloudinary\.com\//i.test(s)) s = `https://${s.slice(7)}`;
+  try {
+    const url = new URL(s);
+    if (url.protocol === 'https:' && !url.username && !url.password && s.length <= 500) return { value: url.href };
+  } catch {
+    /* fall through */
+  }
+  return { error: `अमान्य फ़ोटो लिंक — photo must be a full https:// link (got "${s.slice(0, 40)}")` };
+}

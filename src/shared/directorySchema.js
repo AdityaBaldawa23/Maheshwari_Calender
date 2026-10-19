@@ -4,13 +4,19 @@
  *
  * Published record shape (empty fields are omitted to keep snapshots small):
  *   { id, nameHi?, nameEn?, dob?, age?, anniversary?, bloodGroup?, fatherName?,
- *     motherName?, phone?, city?, note? }
+ *     motherName?, phone?, city?, note?, photo?, profession?, professionDetail?,
+ *     designation?, org? }
+ *   - photo: https image URL (e.g. Cloudinary).
+ *   - profession: a category id from professions.js; professionDetail: free text.
+ *   - org: organisation id from organizations.js (absent = Yuva Sangathan).
  *   - dob / anniversary: ISO "YYYY-MM-DD".
  *   - age: ONLY when the source supplied an age without a DOB. When a DOB is
  *     present, age is always computed at display time (never stored).
  *   - note: a public note approved by an administrator (admin-only notes stay private).
  */
 import { isValidKey, parseKey } from '../utils/date.js';
+import { PROFESSION_IDS } from './professions.js';
+import { ORG_IDS } from './organizations.js';
 
 export const DIRECTORY_SCHEMA_VERSION = 1;
 
@@ -30,7 +36,35 @@ export const MEMBER_FIELDS = {
   phone: { label: { hi: 'संपर्क नंबर', en: 'Contact number' }, max: 16 },
   city: { label: { hi: 'शहर / स्थान', en: 'City / locality' }, max: 100 },
   note: { label: { hi: 'टिप्पणी', en: 'Note' }, max: 300 },
+  photo: { label: { hi: 'फ़ोटो', en: 'Photo URL' }, max: 500 },
+  profession: { label: { hi: 'व्यवसाय', en: 'Profession' } },
+  professionDetail: { label: { hi: 'व्यवसाय विवरण', en: 'Profession details' }, max: 120 },
+  designation: { label: { hi: 'पद', en: 'Designation' }, max: 80 },
+  org: { label: { hi: 'संगठन', en: 'Organisation' } },
 };
+
+/** Photo links must be https image URLs (no credentials, reasonable length). */
+export function isSafePhotoUrl(value) {
+  if (typeof value !== 'string' || value.length > 500) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Small, face-centred thumbnail for Cloudinary links (saves data on phones);
+ * other URLs are returned unchanged.
+ */
+export function photoThumb(url, size = 160) {
+  if (!isSafePhotoUrl(url)) return null;
+  const marker = '/image/upload/';
+  const i = url.indexOf(marker);
+  if (!url.includes('res.cloudinary.com') || i < 0) return url;
+  return `${url.slice(0, i + marker.length)}c_fill,g_face,w_${size},h_${size},q_auto,f_auto/${url.slice(i + marker.length)}`;
+}
 
 export const PUBLIC_FIELDS = Object.keys(MEMBER_FIELDS);
 export const MEMBER_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/;
@@ -72,6 +106,9 @@ export function checkPublishedMember(m) {
   if (m.age !== undefined && !(Number.isInteger(m.age) && m.age >= 0 && m.age <= 125)) problems.push('age must be 0–125');
   if (m.bloodGroup !== undefined && !BLOOD_GROUPS.includes(m.bloodGroup)) problems.push(`invalid blood group ${m.bloodGroup}`);
   if (m.phone !== undefined && !PHONE_PATTERN.test(m.phone)) problems.push('invalid phone');
+  if (m.photo !== undefined && !isSafePhotoUrl(m.photo)) problems.push('photo must be an https URL');
+  if (m.profession !== undefined && !PROFESSION_IDS.includes(m.profession)) problems.push(`unknown profession ${m.profession}`);
+  if (m.org !== undefined && !ORG_IDS.includes(m.org)) problems.push(`unknown organisation ${m.org}`);
   const unknown = Object.keys(m).filter((k) => !PUBLIC_FIELDS.includes(k));
   if (unknown.length) problems.push(`unknown fields: ${unknown.join(', ')}`);
   return problems;

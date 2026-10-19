@@ -5,6 +5,7 @@ import { ReminderPromo } from '../components/ReminderPromo.jsx';
 import { CategoryLabel } from '../components/OccasionTag.jsx';
 import { parseKey, weekdayOf } from '../utils/date.js';
 import { formatDateTime, fullTithiLabel, num, txt, weekdayShort } from '../utils/format.js';
+import { useDateLang } from '../hooks/useDateLang.js';
 
 function groupByDate(events) {
   const groups = [];
@@ -16,7 +17,7 @@ function groupByDate(events) {
   return groups;
 }
 
-function MoonEvent({ event, panchang }) {
+function MoonEvent({ event, panchang, lang }) {
   const isAmavasya = event.paksha === 'krishna';
   return (
     <div>
@@ -31,13 +32,13 @@ function MoonEvent({ event, panchang }) {
         {event.start && (
           <>
             <dt className="text-muted">प्रारंभ:</dt>
-            <dd className="text-ink">{formatDateTime(event.start)}</dd>
+            <dd className="text-ink">{formatDateTime(event.start, lang)}</dd>
           </>
         )}
         {event.end && (
           <>
             <dt className="text-muted">समाप्ति:</dt>
-            <dd className="text-ink">{formatDateTime(event.end)}</dd>
+            <dd className="text-ink">{formatDateTime(event.end, lang)}</dd>
           </>
         )}
       </dl>
@@ -51,6 +52,9 @@ function OccasionEvent({ occasion }) {
       <p className={`leading-snug ${occasion.importance === 'low' ? 'text-ink/90' : 'font-semibold text-ink'}`}>
         {txt(occasion.title)}
       </p>
+      {occasion.holiday && (
+        <span className="mr-2 inline-block rounded bg-holiday px-1.5 text-xs leading-5 font-semibold text-white">सार्वजनिक अवकाश</span>
+      )}
       <CategoryLabel category={occasion.category} />
     </div>
   );
@@ -59,6 +63,7 @@ function OccasionEvent({ occasion }) {
 /** "अवसर" tab — all occasions of the month, plus Purnima/Amavasya with start and end times. */
 export function OccasionsPage({ month, onChangeMonth, onGoToday, isCurrentMonth, onPickMonth, onSelectDate }) {
   const monthData = useMonthData(month.y, month.m);
+  const lang = useDateLang();
   const groups = groupByDate(buildMonthEvents(monthData));
 
   return (
@@ -98,15 +103,15 @@ export function OccasionsPage({ month, onChangeMonth, onGoToday, isCurrentMonth,
                   <span
                     className={`flex w-12 shrink-0 flex-col items-center rounded-lg py-1 ${important ? 'bg-saffron-soft' : 'bg-paper'}`}
                   >
-                    <span className={`font-display text-xl leading-tight ${weekday === 0 ? 'text-sunday' : 'text-ink'}`}>
-                      {num(d)}
+                    <span className={`font-display text-xl leading-tight ${weekday === 0 || events.some((e) => e.occasion?.holiday) ? 'text-holiday' : 'text-ink'}`}>
+                      {num(d, lang)}
                     </span>
-                    <span className="text-[0.7rem] text-muted">{weekdayShort(weekday)}</span>
+                    <span className="text-[0.7rem] text-muted">{weekdayShort(weekday, lang)}</span>
                   </span>
                   <span className="min-w-0 flex-1 space-y-2">
                     {events.map((e) =>
                       e.type === 'moon' ? (
-                        <MoonEvent key={`moon-${e.start}`} event={e} panchang={day?.panchang?.tithi === 15 ? day.panchang : null} />
+                        <MoonEvent key={`moon-${e.start}`} event={e} panchang={day?.panchang?.tithi === 15 ? day.panchang : null} lang={lang} />
                       ) : (
                         <OccasionEvent key={e.occasion.id} occasion={e.occasion} />
                       ),

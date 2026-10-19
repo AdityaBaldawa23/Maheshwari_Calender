@@ -3,15 +3,19 @@
  * normalisers as spreadsheet import, so both paths store identical data.
  */
 import { MEMBER_ID_PATTERN } from './directorySchema.js';
+import { PROFESSION_IDS } from './professions.js';
+import { DEFAULT_ORG, ORG_IDS } from './organizations.js';
 import {
-  cleanText, normalizeAge, normalizeBloodGroup, normalizeDate, normalizeMemberId, normalizePhone, normalizeText,
+  cleanText, normalizeAge, normalizeBloodGroup, normalizeDate, normalizeMemberId, normalizePhone, normalizePhotoUrl,
+  normalizeText,
 } from './import/normalize.js';
 
-const TEXT = { nameHi: 100, nameEn: 100, fatherName: 100, motherName: 100, city: 100, publicNote: 300, adminNote: 500 };
+const TEXT = { nameHi: 100, nameEn: 100, fatherName: 100, motherName: 100, city: 100, publicNote: 300, adminNote: 500, professionDetail: 120, designation: 80 };
 
 export const EMPTY_MEMBER_FORM = {
   id: '', nameHi: '', nameEn: '', dob: '', age: '', anniversary: '', bloodGroup: '', fatherName: '', motherName: '',
   phone: '', city: '', publicNote: '', adminNote: '', status: 'active',
+  photo: '', profession: '', professionDetail: '', designation: '', org: DEFAULT_ORG,
 };
 
 /** Master record → form strings. */
@@ -43,6 +47,10 @@ export function validateMemberForm(form, { today, isNew }) {
   take('anniversary', normalizeDate(form.anniversary, { notAfter: today }));
   take('bloodGroup', normalizeBloodGroup(form.bloodGroup));
   take('phone', normalizePhone(form.phone));
+  take('photo', normalizePhotoUrl(form.photo));
+  if (form.profession && !PROFESSION_IDS.includes(form.profession)) errors.profession = 'Unknown profession category';
+  else record.profession = form.profession || '';
+  record.org = ORG_IDS.includes(form.org) ? form.org : DEFAULT_ORG;
   const age = normalizeAge(form.age);
   if (age.error) errors.age = age.error;
   else record.age = record.dob ? '' : age.value; // never store an age when a DOB exists

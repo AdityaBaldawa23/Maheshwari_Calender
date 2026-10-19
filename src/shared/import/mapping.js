@@ -17,6 +17,10 @@ export const IMPORT_TARGETS = {
   motherName: { hi: 'माता का नाम', en: "Mother's name" },
   phone: { hi: 'संपर्क नंबर', en: 'Contact number' },
   city: { hi: 'शहर / स्थान', en: 'City / locality' },
+  photo: { hi: 'फ़ोटो लिंक', en: 'Photo URL' },
+  profession: { hi: 'व्यवसाय', en: 'Profession' },
+  professionDetail: { hi: 'व्यवसाय विवरण', en: 'Profession details' },
+  designation: { hi: 'पद', en: 'Designation' },
   publicNote: { hi: 'सार्वजनिक टिप्पणी', en: 'Public note' },
   adminNote: { hi: 'आंतरिक टिप्पणी (प्रकाशित नहीं)', en: 'Internal note (not published)' },
 };
@@ -34,6 +38,10 @@ const ALIASES = {
   motherName: ['mother', 'mother name', 'mothers name', 'mother s name', 'माता', 'माता का नाम', 'माताजी का नाम', 'आईचे नाव'],
   phone: ['phone', 'mobile', 'mobile no', 'mobile number', 'contact', 'contact no', 'contact number', 'phone number', 'मोबाइल', 'मोबाईल', 'फ़ोन', 'फोन', 'संपर्क', 'संपर्क नंबर', 'मोबाइल नंबर'],
   city: ['city', 'locality', 'place', 'town', 'village', 'area', 'address', 'शहर', 'गाँव', 'गांव', 'स्थान', 'पता', 'नगर'],
+  photo: ['photo', 'photo url', 'photo link', 'image', 'image url', 'image link', 'picture', 'pic', 'profile photo', 'cloudinary', 'फोटो', 'फ़ोटो', 'चित्र'],
+  profession: ['profession', 'occupation', 'business', 'work', 'job', 'profession category', 'व्यवसाय', 'पेशा', 'व्यापार', 'काम', 'नौकरी'],
+  professionDetail: ['profession details', 'profession detail', 'occupation details', 'business details', 'business name', 'firm', 'firm name', 'company', 'company name', 'व्यवसाय विवरण', 'फर्म', 'फर्म का नाम'],
+  designation: ['designation', 'post', 'position', 'role', 'committee post', 'पद', 'पदनाम', 'दायित्व'],
   publicNote: ['note', 'notes', 'public note', 'remark', 'remarks', 'टिप्पणी'],
   adminNote: ['internal note', 'admin note', 'private note', 'आंतरिक टिप्पणी'],
 };

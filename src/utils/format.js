@@ -116,9 +116,9 @@ export function lunarMonthsLabel(lunarMonths, lang = 'hi') {
   return lunarMonths.map((lm) => maasName(lm.maas, lm.adhik, lang)).join(' – ');
 }
 
-export function samvatLabel(samvats) {
+export function samvatLabel(samvats, lang = 'hi') {
   if (!samvats?.length) return '';
-  return `वि.सं. ${samvats.map((s) => num(s)).join('–')}`;
+  return `वि.सं. ${samvats.map((s) => num(s, lang)).join('–')}`;
 }
 
 /** "+919876543210" → "+९१ ९८७६५ ४३२१०"; other numbers just get Devanagari digits. */

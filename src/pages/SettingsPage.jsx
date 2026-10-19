@@ -123,6 +123,33 @@ export function SettingsPage() {
         )}
       </fieldset>
 
+      <section className="card p-3" aria-labelledby="date-lang-title">
+        <h3 id="date-lang-title" className="font-display text-lg text-maroon">
+          तारीख़ और वार की भाषा
+        </h3>
+        <div role="radiogroup" aria-labelledby="date-lang-title" className="mt-2 grid grid-cols-2 gap-2">
+          {[
+            ['hi', 'हिंदी', '१२ अक्टूबर · रवि'],
+            ['en', 'English', '12 October · Sun'],
+          ].map(([value, label, example]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={settings.dateLang === value}
+              onClick={() => update({ dateLang: value })}
+              className={`min-h-14 rounded-xl border px-3 text-left ${
+                settings.dateLang === value ? 'border-maroon bg-gold-soft/60' : 'border-line bg-paper'
+              }`}
+            >
+              <span className="block font-semibold text-ink">{label}</span>
+              <span className="block text-xs text-muted">{example}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-muted">तिथि, पक्ष और पर्वों के नाम हिंदी में ही रहेंगे।</p>
+      </section>
+
       <section className="card space-y-2 p-3 text-sm leading-relaxed text-ink/90">
         <h3 className="font-display text-lg text-maroon">ऐप के बारे में</h3>
         <p>

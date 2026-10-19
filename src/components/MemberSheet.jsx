@@ -5,6 +5,9 @@ import { dialable } from '../shared/emergencySchema.js';
 import { whatsappUrl } from '../shared/whatsapp.js';
 import { buildCelebrationIndex, celebrationLabel, celebrationsOn, greetingFor } from '../services/celebrations.js';
 import { formatDate, formatPhone, num, txt } from '../utils/format.js';
+import { professionLabel } from '../shared/professions.js';
+import { orgLabel, orgOf } from '../shared/organizations.js';
+import { Avatar } from './Avatar.jsx';
 
 const MISSING = '—';
 
@@ -31,10 +34,16 @@ export function MemberSheet({ member, today, onClose }) {
   return (
     <Sheet labelledBy="member-title" onClose={onClose}>
       <div className="px-4 pb-6">
-        <h2 id="member-title" className="pt-1 pr-10 font-display text-2xl leading-snug text-maroon">
-          {memberName(member)}
-        </h2>
-        {member.nameHi && member.nameEn && <p className="text-sm text-muted">{member.nameEn}</p>}
+        <div className="flex items-center gap-4 pt-1 pr-10">
+          <Avatar member={member} size={88} className="shadow-md" />
+          <div className="min-w-0">
+            <h2 id="member-title" className="font-display text-2xl leading-snug text-maroon">
+              {memberName(member)}
+            </h2>
+            {member.nameHi && member.nameEn && <p className="text-sm text-muted">{member.nameEn}</p>}
+            <p className="text-sm text-ink/80">{[member.designation, orgLabel(orgOf(member))].filter(Boolean).join(' · ')}</p>
+          </div>
+        </div>
 
         {todayCelebrations.map((c) => (
           <p key={c.kind} className="mt-2 inline-flex rounded-full bg-gold-soft px-3 py-1 text-sm font-semibold text-maroon">
@@ -63,6 +72,12 @@ export function MemberSheet({ member, today, onClose }) {
         )}
 
         <dl className="mt-3 divide-y divide-line">
+          {(member.profession || member.professionDetail) && (
+            <Row
+              label={label('profession')}
+              value={[member.profession ? professionLabel(member.profession) : '', member.professionDetail].filter(Boolean).join(' — ')}
+            />
+          )}
           <Row label={label('bloodGroup')} value={member.bloodGroup} />
           <Row label={label('age')} value={age !== null ? `${num(age)} वर्ष` : ''} />
           <Row label={label('dob')} value={member.dob ? formatDate(member.dob) : ''} />

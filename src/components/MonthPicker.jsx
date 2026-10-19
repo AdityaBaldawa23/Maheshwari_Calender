@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from './Icons.jsx';
 import { monthName, num } from '../utils/format.js';
 
 /** Jump to any month/year. Years without bundled panchang still open (dates only). */
-export function MonthPicker({ y, m, onPick, onClose }) {
+export function MonthPicker({ y, m, lang = 'hi', onPick, onClose }) {
   const [year, setYear] = useState(y);
 
   return (
@@ -23,7 +23,7 @@ export function MonthPicker({ y, m, onPick, onClose }) {
             <ChevronLeft />
           </button>
           <span className="min-w-24 text-center font-display text-2xl text-maroon" aria-live="polite">
-            {num(year)}
+            {num(year, lang)}
           </span>
           <button
             type="button"
@@ -50,7 +50,7 @@ export function MonthPicker({ y, m, onPick, onClose }) {
                   current ? 'border-maroon bg-maroon text-white' : 'border-line bg-paper text-ink active:bg-gold-soft'
                 }`}
               >
-                {monthName(month)}
+                {monthName(month, lang)}
               </button>
             );
           })}

@@ -40,6 +40,26 @@
   --color-sunday: #b4231b;
   --color-vrat: #2f6b3a;
   --color-national: #1e4b8f;
+  --color-holiday: #c8102e;
+
+  /* Traditional weekday (graha) colours for the weekday column: white text passes AA on each. */
+  --color-day-0: #c2410c; /* रवि — Surya, saffron */
+  --color-day-1: #4a6585; /* सोम — Chandra, silver-blue */
+  --color-day-2: #b91c1c; /* मंगल — Mangal, red */
+  --color-day-3: #15803d; /* बुध — Budh, green */
+  --color-day-4: #a16207; /* गुरु — Guru, gold */
+  --color-day-5: #be185d; /* शुक्र — Shukra, pink */
+  --color-day-6: #3730a3; /* शनि — Shani, indigo */
+
+  /* Soft cell tints */
+  --color-tint-festival: #fff0dc;
+  --color-tint-community: #fde7ee;
+  --color-tint-vrat: #e7f5ea;
+  --color-tint-national: #e8eefb;
+  --color-tint-holiday: #fde4e4;
+  --color-tint-purnima: #fff6d6;
+  --color-tint-amavasya: #eeebf3;
+  --color-tint-sunday: #fff6f1;
 }
 
 @layer base {

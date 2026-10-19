@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   /** Permission-flow bookkeeping, so we never nag. */
   permissionAsked: false,
   reminderPromoDismissed: false,
+  /** Language for calendar dates, months and weekdays: 'hi' (१२ अक्टूबर, रवि) or 'en' (12 October, Sun). */
+  dateLang: 'hi',
 });
 
 export function sanitizeSettings(raw) {
@@ -38,5 +40,6 @@ export function sanitizeSettings(raw) {
     mutedOccasions: Array.isArray(s.mutedOccasions) ? s.mutedOccasions.filter((x) => typeof x === 'string') : [],
     permissionAsked: bool(s.permissionAsked, false),
     reminderPromoDismissed: bool(s.reminderPromoDismissed, false),
+    dateLang: s.dateLang === 'en' ? 'en' : 'hi',
   };
 }

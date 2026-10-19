@@ -3,14 +3,18 @@ import { whatsappUrl } from '../shared/whatsapp.js';
 import { celebrationLabel, greetingFor } from '../services/celebrations.js';
 import { num } from '../utils/format.js';
 import { WhatsAppIcon } from './Icons.jsx';
+import { Avatar } from './Avatar.jsx';
 
 /** One person's birthday/anniversary with an optional WhatsApp greeting (opens only on tap). */
 function CelebrationRow({ entry, onOpen }) {
   const wa = whatsappUrl(entry.member.phone, greetingFor(entry));
   return (
     <li className="flex items-center gap-2 py-2">
-      <span aria-hidden="true" className="text-lg">
-        {entry.kind === 'birthday' ? '🎂' : '💐'}
+      <span className="relative shrink-0">
+        <Avatar member={entry.member} size={40} />
+        <span aria-hidden="true" className="absolute -right-1 -bottom-1 text-sm">
+          {entry.kind === 'birthday' ? '🎂' : '💐'}
+        </span>
       </span>
       <button type="button" onClick={() => onOpen(entry.member.id)} className="min-w-0 flex-1 text-left">
         <span className="block truncate font-semibold text-ink">{memberName(entry.member)}</span>

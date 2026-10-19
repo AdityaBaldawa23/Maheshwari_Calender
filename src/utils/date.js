@@ -163,3 +163,17 @@ export function toLocalDateTime(key, time) {
   if (!p || !t) return null;
   return new Date(p.y, p.m - 1, p.d, t.h, t.min, 0, 0);
 }
+
+/**
+ * For an empty box of a month grid (weeks from buildMonthGrid): the date from the
+ * previous month (first week) or next month (last week) that would sit there.
+ */
+export function adjacentMonthKey(weeks, weekIndex, weekday) {
+  if (weekIndex === 0) {
+    const first = weeks[0].findIndex(Boolean);
+    return addDays(weeks[0][first], weekday - first);
+  }
+  const week = weeks[weekIndex];
+  const last = week.length - 1 - [...week].reverse().findIndex(Boolean);
+  return addDays(week[last], weekday - last);
+}
