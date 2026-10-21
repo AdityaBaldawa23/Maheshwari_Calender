@@ -16,6 +16,8 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 export const CHANNEL_ID = 'occasion-reminders';
+/** Community notices the admin marked as pop-up (MINOR_UI_CHANGES.md, Change 3). */
+export const NOTICE_CHANNEL_ID = 'community-notices';
 const SMALL_ICON = 'ic_stat_notify';
 const ICON_COLOR = '#7A1F2B';
 
@@ -80,7 +82,8 @@ export function createNotificationService({ plugin = LocalNotifications, isNativ
       const result = { ok: true, scheduled: 0, cancelled: 0, kept: 0 };
       if (!isNative) return { ...result, ok: false, error: 'unsupported' };
       try {
-        const { notifications: pending = [] } = await plugin.getPending();
+        const { notifications: all = [] } = await plugin.getPending();
+        const pending = all.filter((p) => p.extra?.kind !== 'notice'); // notice pop-ups are not reminders
         const wanted = new Map(plan.map((item) => [item.id, item]));
 
         const toCancel = pending.filter((p) => {
@@ -122,6 +125,45 @@ export function createNotificationService({ plugin = LocalNotifications, isNativ
       } catch (err) {
         console.error('[notifications] sync failed', err);
         return { ...result, ok: false, error: String(err?.message ?? err) };
+      }
+    },
+
+    /**
+     * Shows an admin notice as a heads-up notification right away (like festival
+     * reminders, but on its own channel). Only when permission was already granted;
+     * never prompts.
+     */
+    async showNotice({ id, title, body }) {
+      if (!isNative) return false;
+      try {
+        if (normalisePermission((await plugin.checkPermissions()).display) !== 'granted') return false;
+        await plugin.createChannel({
+          id: NOTICE_CHANNEL_ID,
+          name: 'समाज की सूचनाएँ',
+          description: 'संगठन द्वारा भेजी गई सूचनाएँ',
+          importance: 4,
+          visibility: 1,
+          vibration: true,
+        }).catch(() => {});
+        await plugin.schedule({
+          notifications: [
+            {
+              id,
+              title,
+              body,
+              largeBody: body,
+              channelId: NOTICE_CHANNEL_ID,
+              smallIcon: SMALL_ICON,
+              iconColor: ICON_COLOR,
+              schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
+              extra: { kind: 'notice' },
+            },
+          ],
+        });
+        return true;
+      } catch (err) {
+        console.warn('[notifications] notice failed', err);
+        return false;
       }
     },
 

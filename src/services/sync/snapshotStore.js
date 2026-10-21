@@ -31,6 +31,13 @@ export function createCapacitorFileBackend(fs = Filesystem) {
     async write(name, text) {
       await fs.writeFile({ ...opts(name), data: text, recursive: true });
     },
+    async remove(name) {
+      try {
+        await fs.deleteFile({ path: opts(name).path, directory: Directory.Data });
+      } catch {
+        // already gone
+      }
+    },
   };
 }
 
@@ -46,6 +53,9 @@ export function createPreferencesPointer(prefs = Preferences) {
     },
     async set(key, value) {
       await prefs.set({ key: `mdc.snap.${key}`, value: JSON.stringify(value) });
+    },
+    async remove(key) {
+      await prefs.remove({ key: `mdc.snap.${key}` });
     },
   };
 }
@@ -93,6 +103,20 @@ export function createSnapshotStore(name, { files = createCapacitorFileBackend()
       if (!check || check.meta?.version !== meta.version) throw new Error(`snapshot ${name}: write verification failed`);
       await pointer.set(name, { slot: target, version: meta.version, savedAt: snapshot.savedAt });
       return snapshot;
+    },
+
+    /**
+     * Deletes the cached snapshot (both slots). Used for protected data when access
+     * ends (sign-out, revocation, district change). The pointer goes first, so an
+     * interrupted clear can never re-activate the old data.
+     */
+    async clear() {
+      if (pointer.remove) await pointer.remove(name);
+      else await pointer.set(name, null);
+      for (const slot of ['A', 'B']) {
+        if (files.remove) await files.remove(fileFor(slot));
+        else await files.write(fileFor(slot), '');
+      }
     },
   };
 }

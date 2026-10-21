@@ -10,6 +10,9 @@ import { Avatar } from '../components/Avatar.jsx';
 import { buildCelebrationIndex, celebrationsOn } from '../services/celebrations.js';
 import { professionLabel } from '../shared/professions.js';
 import { DEFAULT_ORG, ORGANIZATIONS, orgLabel, orgOf } from '../shared/organizations.js';
+import { districtLabel } from '../shared/districts.js';
+import { maskPhone } from '../shared/phoneIdentity.js';
+import { AccessNotice, MemberGate } from '../components/MemberAccess.jsx';
 
 const PAGE_SIZE = 50;
 
@@ -103,10 +106,10 @@ function subtitle(m) {
 }
 
 /**
- * "माहेश्वरी परिवार" — public directories of the four organisations, searchable
- * and filterable offline from the cached snapshot.
+ * "माहेश्वरी परिवार" — the member's district directory (four organisations),
+ * searchable and filterable offline from the cached snapshot.
  */
-export function DirectoryPage({ today }) {
+function DirectoryList({ today, access }) {
   const state = useDataset('directory');
   const members = state.snapshot?.data;
   const [org, setOrg] = useState(DEFAULT_ORG);
@@ -155,7 +158,10 @@ export function DirectoryPage({ today }) {
   return (
     <div className="space-y-3 px-3 py-2">
       <div className="flex items-end justify-between gap-2 px-1">
-        <h2 className="font-display text-2xl text-maroon">माहेश्वरी परिवार</h2>
+        <div>
+          <h2 className="font-display text-2xl text-maroon">माहेश्वरी परिवार</h2>
+          <p className="text-xs text-muted">जिला: {districtLabel(access.district)}</p>
+        </div>
         {members && (
           <button
             type="button"
@@ -261,13 +267,49 @@ export function DirectoryPage({ today }) {
             </>
           )}
           <p className="px-1 text-xs leading-relaxed text-muted">
-            यह निर्देशिका समाज द्वारा प्रकाशित सार्वजनिक जानकारी है। अपनी जानकारी में सुधार या उसे हटाने के लिए संगठन के
-            पदाधिकारियों से संपर्क करें।
+            यह निर्देशिका केवल स्वीकृत सदस्यों के लिए है — इसकी जानकारी आगे साझा न करें। अपनी जानकारी में सुधार या उसे हटाने के
+            लिए संगठन के पदाधिकारियों से संपर्क करें।
           </p>
         </>
       )}
+      <div className="flex items-center justify-between gap-2 px-1 pb-2 text-xs text-muted">
+        <span>साइन इन: {maskPhone(access.phone)}</span>
+        <button type="button" onClick={() => syncManager.signOut()} className="min-h-10 font-semibold text-maroon underline">
+          साइन आउट
+        </button>
+      </div>
 
       {open && <MemberSheet member={open} today={today} onClose={() => setOpenId(null)} />}
+    </div>
+  );
+}
+
+/**
+ * Directory tab. The directory and birthdays/anniversaries are shown ONLY to a
+ * signed-in member whose access the IT Head approved; the data itself is
+ * protected by Security Rules (this screen is not the security boundary).
+ */
+export function DirectoryPage({ today }) {
+  const access = useDataset('access');
+  const state = useDataset('directory');
+  const retry = () => syncManager.syncAll({ force: true });
+
+  let body;
+  if (!syncManager.enabled) {
+    body = <p className="card p-4 text-sm leading-relaxed text-muted">माहेश्वरी परिवार निर्देशिका अभी प्रकाशित नहीं हुई है। जल्द उपलब्ध होगी।</p>;
+  } else if (!access.loaded) {
+    body = null;
+  } else if (access.status === 'signedOut' || !access.status) {
+    body = <MemberGate />;
+  } else if (access.status === 'approved' && state.status !== 'stale') {
+    return <DirectoryList today={today} access={access} />;
+  } else {
+    body = <AccessNotice access={access} directoryStatus={state.status} onRetry={retry} />;
+  }
+  return (
+    <div className="space-y-3 px-3 py-2">
+      <h2 className="px-1 font-display text-2xl text-maroon">माहेश्वरी परिवार</h2>
+      {body}
     </div>
   );
 }

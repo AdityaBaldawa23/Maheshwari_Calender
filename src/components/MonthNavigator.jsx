@@ -4,7 +4,9 @@ import { MonthPicker } from './MonthPicker.jsx';
 import { lunarMonthsLabel, monthYearLabel, samvatLabel } from '../utils/format.js';
 import { useSettings } from '../hooks/useSettings.jsx';
 
-/** Switches calendar dates/weekdays between Hindi (अ) and English (A). Shows the language you'll get. */
+// UI customisation — see MINOR_UI_CHANGES.md (Change 1): the toggle names the language in full
+// ("English" / "हिंदी") instead of the single letters "A" / "अ".
+/** Switches calendar dates/weekdays between Hindi and English. Shows the language you'll get. */
 export function DateLangToggle({ className = '' }) {
   const { settings, update } = useSettings();
   const toEnglish = settings.dateLang !== 'en';
@@ -13,14 +15,14 @@ export function DateLangToggle({ className = '' }) {
       type="button"
       onClick={() => update({ dateLang: toEnglish ? 'en' : 'hi' })}
       aria-label={toEnglish ? 'तारीख़ें अंग्रेज़ी में दिखाएँ (Show dates in English)' : 'तारीख़ें हिंदी में दिखाएँ'}
-      className={`grid h-8 min-w-8 shrink-0 place-items-center rounded-full border border-gold/70 bg-card px-1.5 text-sm font-bold text-maroon shadow-sm active:bg-gold-soft ${className}`}
+      className={`grid h-8 shrink-0 place-items-center rounded-full border border-gold/70 bg-card px-2.5 text-xs font-bold text-maroon shadow-sm active:bg-gold-soft ${className}`}
     >
-      {toEnglish ? 'A' : 'अ'}
+      {toEnglish ? 'English' : 'हिंदी'}
     </button>
   );
 }
 
-/** Compact month switcher: ‹ अक्टूबर २०२६ [A] › [आज]. */
+/** Compact month switcher: ‹ अक्टूबर २०२६ [English] › [आज]. */
 export function MonthNavigator({ y, m, monthData, isCurrentMonth, onPrev, onNext, onToday, onPick }) {
   const [picking, setPicking] = useState(false);
   const { settings } = useSettings();

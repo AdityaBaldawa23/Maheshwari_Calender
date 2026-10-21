@@ -7,15 +7,16 @@ const { version } = JSON.parse(readFileSync(new URL('./package.json', import.met
 
 // Strict Content-Security-Policy, injected only into production builds.
 // (Vite's dev server needs inline scripts for hot reload, so it is skipped in dev.)
-// The only network access: reading PUBLISHED Firestore documents (REST) and,
-// if admins publish them, https advertisement images.
+// The only network access: Firestore REST (published documents; the member's own
+// district directory), Firebase Authentication REST (member sign-in and token
+// refresh) and, if admins publish them, https advertisement images.
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self'",
-  "connect-src 'self' https://firestore.googleapis.com",
+  "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'none'",

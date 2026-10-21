@@ -20,6 +20,7 @@ import { fnv1a } from '../hash.js';
 import { ageOn } from '../directorySchema.js';
 import { isCategoryName, matchProfession } from '../professions.js';
 import { DEFAULT_ORG, ORG_IDS, orgOf } from '../organizations.js';
+import { isDistrictId, matchDistrict } from '../districts.js';
 import {
   cleanText, isBlank, isDevanagari, isPlaceholder, looksLikeFormula, normalizeAge, normalizeBloodGroup, normalizeDate,
   normalizeMemberId, normalizePhone, normalizePhotoUrl, normalizeText, titleCaseIfAllCaps,
@@ -27,7 +28,7 @@ import {
 
 /** Fields of the admin master record that an import can set. */
 export const IMPORTABLE_FIELDS = [
-  'nameHi', 'nameEn', 'dob', 'age', 'anniversary', 'bloodGroup', 'fatherName', 'motherName', 'phone', 'city', 'publicNote', 'adminNote',
+  'nameHi', 'nameEn', 'dob', 'age', 'anniversary', 'bloodGroup', 'fatherName', 'motherName', 'phone', 'city', 'district', 'publicNote', 'adminNote',
   'photo', 'profession', 'professionDetail', 'designation',
 ];
 
@@ -97,6 +98,12 @@ export function parseRow(cells, mapping, { today }) {
       case 'photo':
         set('photo', normalizePhotoUrl(value));
         break;
+      case 'district': {
+        const id = matchDistrict(cleanText(value));
+        if (id) record.district = id;
+        else errors.push({ field: 'district', message: `अज्ञात जिला "${cleanText(value).slice(0, 40)}" — unknown district (see the district list)` });
+        break;
+      }
       case 'profession': {
         const text = cleanText(value).slice(0, TEXT_LIMITS.professionDetail);
         const id = matchProfession(text);
@@ -170,10 +177,12 @@ const sameValue = (a, b) => (a ?? '') === (b ?? '');
  * @param {Record<number,string|null>} input.mapping  column index → target
  * @param {Map<string,object>} input.existing         member id → existing master record
  * @param {'create'|'update'} input.mode
- * @param {{allowCreate?:boolean, clearBlank?:boolean, matchByIdentity?:boolean, defaultCity?:string}} [input.options]
+ * @param {{allowCreate?:boolean, clearBlank?:boolean, matchByIdentity?:boolean, defaultCity?:string, defaultDistrict?:string}} [input.options]
  *   matchByIdentity: in update mode, rows WITHOUT a member ID are matched to an existing
  *     record by name + birth date (or name + mobile / father) — only if exactly one record matches.
  *   defaultCity: city for new rows that have none (e.g. a sheet without a city column).
+ *   defaultDistrict: district id for new rows that have none. Importing never grants
+ *     anyone app access — that is decided separately by the IT Head (memberAccess).
  * @param {string} input.fingerprint                   stable hash of the uploaded file
  * @param {string} input.today                         "YYYY-MM-DD"
  */
@@ -183,6 +192,7 @@ export function buildImportPlan({ dataRows, mapping, existing: allExisting, mode
   const existing = new Map([...allExisting].filter(([, m]) => orgOf(m) === org));
   const { allowCreate = false, clearBlank = false, matchByIdentity = false } = options;
   const defaultCity = cleanText(options.defaultCity ?? '').slice(0, TEXT_LIMITS.city);
+  const defaultDistrict = isDistrictId(options.defaultDistrict) ? options.defaultDistrict : '';
   const parsed = dataRows.map(({ rowNumber, cells }) => ({ rowNumber, ...parseRow(cells, mapping, { today }) }));
 
   // Duplicate member IDs inside the file: every such row is invalid.
@@ -250,6 +260,7 @@ export function buildImportPlan({ dataRows, mapping, existing: allExisting, mode
         row.memberId = id;
         const data = { ...p.record, id, org, status: 'active' };
         if (!data.city && defaultCity) data.city = defaultCity;
+        if (!data.district && defaultDistrict) data.district = defaultDistrict;
         writes.push({ kind: 'create', id, data, rowNumber: p.rowNumber });
       }
     };

@@ -9,8 +9,43 @@
     <meta name="description" content="माहेश्वरी डिजिटल कैलेंडर — तिथि, पंचांग, त्योहार एवं समाज के अवसर" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <title>माहेश्वरी कैलेंडर</title>
+    <!-- UI customisation — see MINOR_UI_CHANGES.md (Change 2): opening loader with two logos
+         (larger upper, smaller lower) and the "Developed by iKRA Studio" line. Replace the files in
+         public/branding/ to change the logos. Removed by src/main.jsx once the app has rendered. -->
+    <style>
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        background: #7a1f2b;
+        transition: opacity 0.35s ease;
+      }
+      #boot-loader.boot-hide { opacity: 0; pointer-events: none; }
+      #boot-loader .boot-logo { display: block; object-fit: contain; border-radius: 24px; background: #fffdf8; padding: 10px; box-shadow: 0 6px 18px rgb(0 0 0 / 0.25); }
+      #boot-loader .boot-logo-primary { width: 136px; height: 136px; }
+      #boot-loader .boot-logo-secondary { width: 84px; height: 84px; border-radius: 18px; padding: 8px; }
+      #boot-loader .boot-credit {
+        position: absolute;
+        bottom: calc(28px + env(safe-area-inset-bottom));
+        margin: 0;
+        font: 600 14px/1.4 system-ui, sans-serif;
+        letter-spacing: 0.02em;
+        color: #f6e7c1;
+      }
+      @media (prefers-reduced-motion: reduce) { #boot-loader { transition: none; } }
+    </style>
   </head>
   <body>
+    <div id="boot-loader" aria-hidden="true">
+      <img class="boot-logo boot-logo-primary" src="./branding/logo-primary.svg" alt="" />
+      <img class="boot-logo boot-logo-secondary" src="./branding/logo-secondary.svg" alt="" />
+      <p class="boot-credit">Developed by iKRA Studio</p>
+    </div>
     <div id="root"></div>
     <noscript>इस ऐप को चलाने के लिए JavaScript आवश्यक है।</noscript>
     <script type="module" src="/src/main.jsx"></script>

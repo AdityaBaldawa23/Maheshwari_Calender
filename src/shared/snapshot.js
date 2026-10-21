@@ -1,13 +1,14 @@
 /**
  * Directory snapshot publishing format (shared by admin publisher, app sync and tests).
  *
- * Firestore layout (public read):
- *   published/directory                         meta  { version, schemaVersion, recordCount, chunkCount, checksum, publishedAt }
- *   published/directory/chunks/{version}_{n}    { version, index, members: [...] }
+ * Firestore layout — ONE snapshot per district, readable only by administrators
+ * and by members approved for that district (see firestore.rules):
+ *   districts/{district}                         meta  { district, version, schemaVersion, recordCount, chunkCount, checksum, publishedAt }
+ *   districts/{district}/chunks/{version}_{n}    { version, index, members: [...] }
  *
- * The app reads the meta document (1 read). Only when `version` changed does it
- * read `chunkCount` chunk documents (≈1 read per 400 members) — never one read
- * per member, never a real-time listener.
+ * The app reads its district's meta document (1 read). Only when `version`
+ * changed does it read `chunkCount` chunk documents (≈1 read per 400 members) —
+ * never one read per member, never a real-time listener, never another district.
  */
 import { checksumOf } from './hash.js';
 import { DIRECTORY_SCHEMA_VERSION, checkPublishedMember, compareMembers } from './directorySchema.js';
@@ -17,13 +18,14 @@ export const CHUNK_SIZE = 400; // ~120 KB per chunk, far below Firestore's 1 MiB
 export const chunkId = (version, index) => `${version}_${index}`;
 
 /** Splits sorted public members into chunks and computes the meta document. */
-export function buildDirectorySnapshot(publicMembers, { version, publishedAt }) {
+export function buildDirectorySnapshot(publicMembers, { version, publishedAt, district }) {
   const members = [...publicMembers].sort(compareMembers);
   const chunks = [];
   for (let i = 0; i < members.length; i += CHUNK_SIZE) {
     chunks.push({ version, index: chunks.length, members: members.slice(i, i + CHUNK_SIZE) });
   }
   const meta = {
+    ...(district ? { district } : {}),
     version,
     schemaVersion: DIRECTORY_SCHEMA_VERSION,
     recordCount: members.length,

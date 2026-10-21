@@ -1,7 +1,7 @@
 /**
- * Decodes Firestore REST API documents into plain JavaScript values.
- * The mobile app reads *published* data through the REST endpoint (no SDK,
- * no authentication, no real-time listeners), keeping the APK small.
+ * Converts between Firestore REST API documents and plain JavaScript values.
+ * The mobile app talks to Firestore through the REST endpoint (no SDK, no
+ * real-time listeners), keeping the APK small.
  * https://firebase.google.com/docs/firestore/reference/rest/v1/Value
  */
 
@@ -27,4 +27,20 @@ export function decodeFields(fields) {
 /** REST document → plain object (fields only). */
 export function decodeDocument(doc) {
   return doc?.fields ? decodeFields(doc.fields) : {};
+}
+
+/** Plain value → Firestore REST value (strings, numbers, booleans, null, arrays, maps). */
+export function encodeValue(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'string') return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(encodeValue) } };
+  return { mapValue: { fields: encodeFields(v) } };
+}
+
+export function encodeFields(obj) {
+  const out = {};
+  for (const [key, value] of Object.entries(obj ?? {})) if (value !== undefined) out[key] = encodeValue(value);
+  return out;
 }

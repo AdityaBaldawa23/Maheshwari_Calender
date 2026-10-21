@@ -52,6 +52,10 @@ reset the upload key.
    back page shows, reminders can be enabled (permission dialog appears once), a test reminder fires
    (temporarily set the reminder time a few minutes ahead on a day with an occasion), Android back
    button behaves, no layout clipping.
+   Then **online** (member access, docs/MEMBER_ACCESS.md): the loader shows both logos and "Developed by iKRA Studio";
+   the directory tab asks only for mobile number + password; an access request can be sent; a provisioned test member
+   signs in, sees only their district, stays signed in after closing the app; after revoking that member in the portal,
+   pull-refresh removes the directory; a pop-up notice published from the portal appears once.
 10. **Upload** the `.aab` to Play Console → Internal testing first, then Production.
     Release notes (Hindi + English) go in the release form.
 

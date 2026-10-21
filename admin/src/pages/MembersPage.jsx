@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Card, ConfirmDialog, Field, Notice, StatusPill, TextInput, downloadText, en, inputClass } from '../components/ui.jsx';
-import { deleteMember, getPublished, loadMembers, prepareDirectory, publishDirectory, saveMember } from '../services/api.js';
+import {
+  deleteLegacyPublicDirectory, deleteMember, getLegacyPublicDirectory, loadDistrictMetas, loadMembers, prepareDirectory, publishDirectory,
+  saveMember,
+} from '../services/api.js';
 import { BLOOD_GROUPS, memberName, photoThumb } from '../../../src/shared/directorySchema.js';
 import { EMPTY_MEMBER_FORM, newMemberId, toForm, validateMemberForm } from '../../../src/shared/memberForm.js';
 import { normalizeForSearch } from '../../../src/services/directorySearch.js';
 import { PROFESSIONS, professionLabel } from '../../../src/shared/professions.js';
 import { ORGANIZATIONS, orgLabel, orgOf } from '../../../src/shared/organizations.js';
+import { DISTRICTS, districtLabel } from '../../../src/shared/districts.js';
 import { toCsv } from '../../../src/shared/import/csv.js';
 import { todayKey } from '../../../src/utils/date.js';
 
 const EXPORT_COLUMNS = [
   ['id', 'Member ID'], ['org', 'Organisation'], ['nameHi', 'Name Hindi'], ['nameEn', 'Name English'], ['dob', 'Date of Birth'],
   ['age', 'Age'], ['anniversary', 'Anniversary'], ['bloodGroup', 'Blood Group'], ['fatherName', "Father's Name"],
-  ['motherName', "Mother's Name"], ['phone', 'Mobile'], ['city', 'City'], ['profession', 'Profession'],
+  ['motherName', "Mother's Name"], ['phone', 'Mobile'], ['city', 'City'], ['district', 'District'], ['profession', 'Profession'],
   ['professionDetail', 'Profession Details'], ['designation', 'Designation'], ['photo', 'Photo URL'],
   ['publicNote', 'Public Note'], ['adminNote', 'Internal Note'], ['status', 'Status'],
 ];
@@ -97,6 +101,16 @@ function MemberForm({ initial, isNew, existingIds, defaultOrg, onSave, onCancel 
           {text('motherName', "Mother's name")}
           {text('phone', 'Mobile / phone', { inputMode: 'tel' })}
           {text('city', 'City / locality')}
+          <Field label="District" error={en(errors.district)} hint="The directory is published per district. Without a district the member is not published.">
+            <select value={form.district} onChange={set('district')} className={inputClass}>
+              <option value="">— not set —</option>
+              {DISTRICTS.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.en} — {d.hi}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Profession" error={en(errors.profession)}>
             <select value={form.profession} onChange={set('profession')} className={inputClass}>
               <option value="">—</option>
@@ -131,20 +145,30 @@ function MemberForm({ initial, isNew, existingIds, defaultOrg, onSave, onCancel 
 function PublishDialog({ prepared, published, busy, onConfirm, onCancel }) {
   const [attested, setAttested] = useState(false);
   const blocked = prepared.problems.length > 0;
+  const publishedTotal = Object.values(published ?? {}).reduce((n, p) => n + (p.recordCount ?? 0), 0);
   return (
     <ConfirmDialog
-      title="Publish directory"
+      title="Publish directory (per district)"
       confirmLabel={blocked ? 'Fix errors first' : 'Publish'}
       busy={busy}
       onConfirm={() => !blocked && attested && onConfirm()}
       onCancel={onCancel}
     >
       <ul className="list-disc pl-5">
-        <li>Will be published: {prepared.publicMembers.length} active members (all organisations)</li>
+        <li>
+          Will be published: {prepared.publicCount} active members in {prepared.districts.length} district(s) (all organisations)
+        </li>
         <li>Not published: {prepared.inactiveCount} inactive</li>
-        <li>Currently in the app: {published ? `${published.recordCount} members` : 'nothing yet'}</li>
-        <li>Internal notes are never published.</li>
+        <li>Currently in the app: {publishedTotal ? `${publishedTotal} members` : 'nothing yet'}</li>
+        <li>Internal notes and districts are never part of the published records.</li>
       </ul>
+      {prepared.noDistrict.length > 0 && (
+        <Notice tone="error">
+          {prepared.noDistrict.length} active member(s) have no district and will NOT be published. Set their district (Members →
+          Edit, or re-import with a District column): {prepared.noDistrict.slice(0, 8).join(', ')}
+          {prepared.noDistrict.length > 8 && ' …'}
+        </Notice>
+      )}
       {blocked && (
         <Notice tone="error">
           {prepared.problems.length} records are invalid — fix them first:{' '}
@@ -152,14 +176,14 @@ function PublishDialog({ prepared, published, busy, onConfirm, onCancel }) {
         </Notice>
       )}
       <p className="text-xs text-muted">
-        Everyone who installs the app will see this list, including dates of birth, blood groups, parents&apos; names, phone
-        numbers and photos.
+        Each district&apos;s list is visible only to members the IT Head approved for that district, including dates of birth, blood
+        groups, parents&apos; names, phone numbers and photos.
       </p>
       <label className="flex items-start gap-2">
         <input type="checkbox" checked={attested} onChange={(e) => setAttested(e.target.checked)} className="mt-1" />
         <span>
-          I confirm that appropriate permission has been obtained to publish these members&apos; details (and photos) publicly,
-          in line with the organisation&apos;s publication policy (docs/V2_DATA_POLICY.md).
+          I confirm that appropriate permission has been obtained to share these members&apos; details (and photos) with approved
+          members of their district, in line with the organisation&apos;s policy (docs/V2_DATA_POLICY.md).
         </span>
       </label>
       {!attested && !blocked && <p className="text-xs text-sunday">Confirmation is required before publishing.</p>}
@@ -169,12 +193,14 @@ function PublishDialog({ prepared, published, busy, onConfirm, onCancel }) {
 
 export function MembersPage({ uid }) {
   const [members, setMembers] = useState(null);
-  const [published, setPublished] = useState(null);
+  const [published, setPublished] = useState(null); // { districtId: meta }
+  const [legacy, setLegacy] = useState(null); // retired public directory still stored?
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [orgFilter, setOrgFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
   const [editing, setEditing] = useState(null); // { member?, isNew }
   const [confirm, setConfirm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -183,9 +209,10 @@ export function MembersPage({ uid }) {
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [list, pub] = await Promise.all([loadMembers(), getPublished('directory')]);
+      const [list, pub, old] = await Promise.all([loadMembers(), loadDistrictMetas(), getLegacyPublicDirectory().catch(() => null)]);
       setMembers(list);
       setPublished(pub);
+      setLegacy(old);
     } catch (err) {
       setError(`Could not load members: ${err.message}`);
     }
@@ -200,17 +227,18 @@ export function MembersPage({ uid }) {
     return members
       .filter((m) => !statusFilter || m.status === statusFilter)
       .filter((m) => !orgFilter || orgOf(m) === orgFilter)
+      .filter((m) => !districtFilter || (districtFilter === 'none' ? !m.district : m.district === districtFilter))
       .filter((m) => {
         if (!tokens.length) return true;
         const hay = normalizeForSearch([m.id, m.nameHi, m.nameEn, m.fatherName, m.city, m.phone, m.designation, professionLabel(m.profession, 'en')].join(' '));
         return tokens.every((t) => hay.includes(t));
       })
       .sort((a, b) => memberName(a).localeCompare(memberName(b), 'hi'));
-  }, [members, query, statusFilter, orgFilter]);
+  }, [members, query, statusFilter, orgFilter, districtFilter]);
 
   const existingIds = useMemo(() => new Set((members ?? []).map((m) => m.id)), [members]);
   const pendingChanges = useMemo(() => {
-    const since = published?.version ?? 0;
+    const since = Math.max(0, ...Object.values(published ?? {}).map((p) => p.version ?? 0));
     return (members ?? []).filter((m) => millis(m.updatedAt) > since).length;
   }, [members, published]);
 
@@ -234,12 +262,30 @@ export function MembersPage({ uid }) {
   const runPublish = async () => {
     setBusy(true);
     try {
-      const meta = await publishDirectory(confirm.prepared.publicMembers, uid);
-      setMessage({ tone: 'success', text: `Published ${meta.recordCount} members (version ${meta.version}). Phones update the next time the app opens.` });
+      const result = await publishDirectory(confirm.prepared, uid);
+      const changed = Object.keys(result.published).length;
+      setMessage({
+        tone: 'success',
+        text: `Published ${result.recordCount} members. ${changed} district(s) updated, ${result.unchanged.length} unchanged. Approved members' phones update the next time the app syncs.`,
+      });
       setConfirm(null);
       await reload();
     } catch (err) {
       setMessage({ tone: 'error', text: `Publishing failed — the previous version is still live: ${err.message}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runLegacyCleanup = async () => {
+    setBusy(true);
+    try {
+      const n = await deleteLegacyPublicDirectory(uid);
+      setMessage({ tone: 'success', text: `Removed the old public directory (${n} documents).` });
+      setConfirm(null);
+      await reload();
+    } catch (err) {
+      setMessage({ tone: 'error', text: `Cleanup failed: ${err.message}` });
     } finally {
       setBusy(false);
     }
@@ -262,6 +308,13 @@ export function MembersPage({ uid }) {
     for (const m of members ?? []) c[orgOf(m)] = (c[orgOf(m)] ?? 0) + 1;
     return c;
   }, [members]);
+  const districtCounts = useMemo(() => {
+    const c = { none: 0 };
+    for (const m of members ?? []) c[m.district || 'none'] = (c[m.district || 'none'] ?? 0) + 1;
+    return c;
+  }, [members]);
+  const publishedTotal = Object.values(published ?? {}).reduce((n, p) => n + (p.recordCount ?? 0), 0);
+  const publishedDistricts = Object.values(published ?? {}).filter((p) => p.recordCount > 0).length;
 
   return (
     <>
@@ -281,9 +334,20 @@ export function MembersPage({ uid }) {
       >
         {error && <Notice tone="error">{error}</Notice>}
         {message && <Notice tone={message.tone}>{message.text}</Notice>}
+        {legacy && (
+          <Notice tone="error">
+            The old <strong>public</strong> directory (published/directory, {legacy.chunkDocs} chunk documents) is still stored in
+            Firestore. The new Security Rules already block public reads of it; remove the stored copy once every district has been
+            published.{' '}
+            <Button variant="ghost" onClick={() => setConfirm({ type: 'legacy' })}>
+              Remove old public directory…
+            </Button>
+          </Notice>
+        )}
         <p className="mt-2 text-sm text-muted">
           {members ? `${members.length} records (${members.filter((m) => m.status === 'active').length} active)` : 'Loading…'}
-          {published ? ` · In the app: ${published.recordCount} members, published ${new Date(published.version).toLocaleString('en-IN')}` : ' · Not published yet'}
+          {publishedDistricts ? ` · In the app: ${publishedTotal} members in ${publishedDistricts} district(s)` : ' · Not published yet'}
+          {districtCounts.none > 0 && ` · ${districtCounts.none} without a district (not published)`}
           {pendingChanges > 0 && ` · ${pendingChanges} unpublished changes`}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -299,6 +363,15 @@ export function MembersPage({ uid }) {
             {ORGANIZATIONS.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.en} ({counts[o.id] ?? 0})
+              </option>
+            ))}
+          </select>
+          <select value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} className={`${inputClass} w-auto`} aria-label="District">
+            <option value="">All districts</option>
+            <option value="none">No district ({districtCounts.none})</option>
+            {DISTRICTS.filter((d) => districtCounts[d.id]).map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.en} ({districtCounts[d.id]})
               </option>
             ))}
           </select>
@@ -321,7 +394,7 @@ export function MembersPage({ uid }) {
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Organisation</th>
                 <th className="px-3 py-2">Profession</th>
-                <th className="px-3 py-2">City</th>
+                <th className="px-3 py-2">City / district</th>
                 <th className="px-3 py-2">Blood</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">
@@ -345,7 +418,10 @@ export function MembersPage({ uid }) {
                   </td>
                   <td className="px-3 py-2">{orgLabel(orgOf(m), 'en')}</td>
                   <td className="px-3 py-2">{m.profession ? professionLabel(m.profession, 'en') : '—'}</td>
-                  <td className="px-3 py-2">{m.city || '—'}</td>
+                  <td className="px-3 py-2">
+                    {m.city || '—'}
+                    <span className={`block text-xs ${m.district ? 'text-muted' : 'text-sunday'}`}>{m.district ? districtLabel(m.district, 'en') : 'No district'}</span>
+                  </td>
                   <td className="px-3 py-2">{m.bloodGroup || '—'}</td>
                   <td className="px-3 py-2">
                     <StatusPill status={m.status} />
@@ -400,6 +476,23 @@ export function MembersPage({ uid }) {
           <p>
             The record of <strong>{memberName(confirm.member)}</strong> ({confirm.member.id}) will be deleted. To only hide it from the
             app, “Deactivate” is usually better.
+          </p>
+        </ConfirmDialog>
+      )}
+
+      {confirm?.type === 'legacy' && (
+        <ConfirmDialog
+          title="Remove the old public directory?"
+          danger
+          confirmLabel="Remove"
+          confirmText="REMOVE"
+          busy={busy}
+          onConfirm={runLegacyCleanup}
+          onCancel={() => setConfirm(null)}
+        >
+          <p>
+            Deletes published/directory and its chunks. Master member records and district directories are not touched. Phones
+            that downloaded the old public list keep their copy until the app is updated (the new app version deletes it).
           </p>
         </ConfirmDialog>
       )}

@@ -9,6 +9,7 @@ import { MEMBER_FIELDS } from '../../../src/shared/directorySchema.js';
 import { DEFAULT_ORG, ORGANIZATIONS, orgLabel, orgOf } from '../../../src/shared/organizations.js';
 import { PROFESSIONS } from '../../../src/shared/professions.js';
 import { todayKey } from '../../../src/utils/date.js';
+import { DISTRICTS } from '../../../src/shared/districts.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 20000;
@@ -17,11 +18,11 @@ const MAX_ROWS = 20000;
 // Leave unknown values blank or write N/A. Member ID is optional (filled automatically; keep it once exported).
 const TEMPLATE_HEADERS = [
   'N', 'Name', 'Mobile No', 'Birth Date', 'Anniversary', 'Blood Group', 'Profession', 'Profession Details', 'Designation',
-  'Photo URL', 'Member ID', "Father's Name", "Mother's Name", 'City', 'Note',
+  'Photo URL', 'Member ID', "Father's Name", "Mother's Name", 'City', 'District', 'Note',
 ];
 const TEMPLATE_EXAMPLE = [
   '1', 'EXAMPLE NAME SURNAME', '9800000000', '16/02/2005', 'N/A', 'B Positive', 'Software Engineer', 'ABC Technologies', '',
-  'https://res.cloudinary.com/<cloud>/image/upload/v1/members/example.jpg', '', '', '', 'Sangli', '',
+  'https://res.cloudinary.com/<cloud>/image/upload/v1/members/example.jpg', '', '', '', 'Sangli', 'Sangli', '',
 ];
 
 async function readRows(file) {
@@ -40,7 +41,7 @@ export function ImportPage({ uid }) {
   const [sheet, setSheet] = useState(null); // { headers, dataRows }
   const [mapping, setMapping] = useState({});
   const [mode, setMode] = useState('create');
-  const [options, setOptions] = useState({ org: DEFAULT_ORG, allowCreate: false, clearBlank: false, matchByIdentity: false, defaultCity: '' });
+  const [options, setOptions] = useState({ org: DEFAULT_ORG, allowCreate: false, clearBlank: false, matchByIdentity: false, defaultCity: '', defaultDistrict: '' });
   const [existing, setExisting] = useState(null);
   const [fingerprint, setFingerprint] = useState('');
   const [previous, setPrevious] = useState(null);
@@ -202,6 +203,16 @@ export function ImportPage({ uid }) {
             </div>
             <Field label="Default city / locality" hint="Given to new rows that have no city. Optional.">
               <input value={options.defaultCity} onChange={setOption('defaultCity')} placeholder="e.g. Sangli / सांगली" className={inputClass} />
+            </Field>
+            <Field label="Default district" hint="Given to new rows without a District column value. The directory is published per district; members without one are not published. Importing never gives anyone app access — the IT Head approves access separately (Member access).">
+              <select value={options.defaultDistrict} onChange={setOption('defaultDistrict')} className={inputClass}>
+                <option value="">— none —</option>
+                {DISTRICTS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.en} — {d.hi}
+                  </option>
+                ))}
+              </select>
             </Field>
             <fieldset className="space-y-1 rounded-xl border border-line p-3 text-sm">
               <legend className="px-1 font-semibold">Mode</legend>

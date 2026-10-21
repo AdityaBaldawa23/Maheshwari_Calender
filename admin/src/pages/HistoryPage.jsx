@@ -61,10 +61,14 @@ export function HistoryPage({ uid }) {
                 <tr key={p.docId}>
                   <td className="px-2 py-1 whitespace-nowrap">{when(p.publishedAt)}</td>
                   <td className="px-2 py-1">{p.dataset}</td>
-                  <td className="px-2 py-1">{p.action}{p.meta?.recordCount !== undefined && ` (${p.meta.recordCount})`}</td>
+                  <td className="px-2 py-1">
+                    {p.action}
+                    {(p.recordCount ?? p.meta?.recordCount) !== undefined && ` (${p.recordCount ?? p.meta.recordCount})`}
+                    {p.districts && <span className="block text-xs text-muted">{Object.keys(p.districts).length} district(s) changed</span>}
+                  </td>
                   <td className="px-2 py-1 font-mono text-xs">{p.version}</td>
                   <td className="px-2 py-1">
-                    {(p.meta || p.payload) && (
+                    {(p.districts || p.payload) && (
                       <Button variant="ghost" onClick={() => setRollback(p)}>
                         Re-publish this version
                       </Button>
@@ -115,8 +119,8 @@ export function HistoryPage({ uid }) {
       {rollback && (
         <ConfirmDialog title="Re-publish an earlier version?" busy={busy} onCancel={() => setRollback(null)} onConfirm={runRollback}>
           <p>
-            Version {rollback.version} of <strong>{rollback.dataset}</strong> will be shown to all app users again.
-            {rollback.dataset === 'directory' && ' (Only the last 3 directory versions can be restored.)'}
+            Version {rollback.version} of <strong>{rollback.dataset}</strong> will be shown in the app again.
+            {rollback.dataset === 'directory' && ' Each district changed in that publication is switched back to its version then (only the last 3 versions per district can be restored).'}
           </p>
         </ConfirmDialog>
       )}

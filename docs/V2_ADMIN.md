@@ -2,6 +2,10 @@
 
 Audience: the developer/maintainer setting up Firebase and the administrators running the portal.
 
+> **Member access (V2.1):** the directory and birthdays/anniversaries are no longer public. Members sign in with
+> mobile number + password, the IT Head approves them and assigns ONE district, and each phone downloads only that
+> district. Approval, provisioning, recovery, offline behaviour and costs: **[MEMBER_ACCESS.md](MEMBER_ACCESS.md)**.
+
 ## 1. Architecture
 
 ```
@@ -9,38 +13,46 @@ Android app (Capacitor)                         Admin portal (web, Firebase Host
  ├─ Calendar: bundled JSON (always offline)      ├─ Firebase Auth (email/password, no sign-up UI)
  ├─ Sync (launch / resume ≥30 min / manual)      ├─ members/*        master records (private)
  │   GET published/* via Firestore REST          ├─ drafts/*         emergency, content, occasions_<year>
- │   (no SDK, no sign-in, no listeners)          ├─ imports/*        import history
- ├─ Two-slot snapshot cache (internal storage)   ├─ publications/*   audit log + rollback payloads
- └─ Offline search/filter in memory              └─ writes published/* (public) after validation
+ │   (no SDK, no listeners)                      ├─ imports/*        import history
+ ├─ Member sign-in (phone + password, REST)      ├─ publications/*   audit log + rollback payloads
+ │   GET districts/{own district} with ID token  ├─ Member access: accessRequests, memberAccess, accessAudit
+ ├─ Two-slot snapshot cache (internal storage)   └─ writes published/* (public) and districts/* (members)
+ └─ Offline search/filter in memory
                      ▲                                        │
                      └────────── Cloud Firestore ◄────────────┘
-                         published/** = public read, admin write
+          published/** = public read · districts/{d} = members approved for d · rest = admins
 ```
 
 The UI talks only to repositories/services (`src/repositories`, `src/services/sync`), never to Firestore directly.
-No Cloud Functions, servers or Firebase Storage are required (works on the free **Spark** plan).
+No Cloud Functions, servers or Firebase Storage are required (works on the free **Spark** plan). Member accounts are
+created by a local Admin SDK script on the IT Head computer ([MEMBER_ACCESS.md](MEMBER_ACCESS.md) §4).
 
 ## 2. Firestore schema
 
 | Path | Read | Write | Contents |
 | --- | --- | --- | --- |
 | `admins/{uid}` | self / admins | **nobody** (console only) | `{ active: true, email, name }` |
-| `members/{id}` | admins | admins | master record: `id, nameHi, nameEn, dob, age, anniversary, bloodGroup, fatherName, motherName, phone, city, publicNote, adminNote, status (active/inactive), createdAt, updatedAt, updatedBy, importId` |
+| `members/{id}` | admins | admins | master record: `id, nameHi, nameEn, dob, age, anniversary, bloodGroup, fatherName, motherName, phone, city, district, publicNote, adminNote, status (active/inactive), createdAt, updatedAt, updatedBy, importId` (+ photo, profession, designation, org) |
 | `drafts/{emergency \| content \| occasions_YYYY}` | admins | admins | unpublished edits |
 | `imports/{importId}` | admins | create/update by admins, never deleted | file name, mode, options, summary, status, written |
 | `publications/{auto}` | admins | append-only | dataset, action, version, meta/payload, publishedBy |
-| `published/directory` | **public** | admins | `{ version, schemaVersion, recordCount, chunkCount, checksum, publishedAt }` |
-| `published/directory/chunks/{version}_{n}` | **public** | admins | `{ version, index, members: [≤400 public records] }` |
+| `districts/{district}` | admins + members approved for that district | admins | `{ district, version, schemaVersion, recordCount, chunkCount, checksum, publishedAt }` |
+| `districts/{district}/chunks/{version}_{n}` | same | admins | `{ version, index, members: [≤400 directory records] }` |
+| `accessRequests/{phone10}` | admins | **create by anyone** (validated, `pending` only, one per number); admins | name, phone, district, optional father/city/org/note, status, submittedAt |
+| `memberAccess/p{phone10}` | admins + the member themself | admins only | `{ phone, name, district, status (approved/revoked), memberId?, account* (set by the provisioning script) }` |
+| `accessAudit/{auto}` | admins | append-only | action, target, district/reason, by, at |
+| `published/directory` (+ chunks) | admins only (**retired** V2.0 public directory) | nobody (delete only) | remove with *Members → Remove old public directory* |
 | `published/emergency` | **public** | admins | `{ version, schemaVersion, contacts[4], services[3], hospitals[4] }` |
 | `published/content` | **public** | admins | `{ version, schemaVersion, ads[], notices[] }` |
 | `published/calendar` | **public** | admins | `{ version, years: { "2027": <version> } }` |
 | `published/occasions_YYYY` | **public** | admins | `{ version, year, verified, occasions[] }` |
 
-Public directory records contain only: `id, nameHi, nameEn, dob, age (only if no DOB), anniversary,
-bloodGroup, fatherName, motherName, phone, city, note`. **Admin notes and inactive members are never published.**
+District directory records contain only: `id, nameHi, nameEn, dob, age (only if no DOB), anniversary,
+bloodGroup, fatherName, motherName, phone, city, note, photo, profession, professionDetail, designation, org`.
+**Admin notes, districts, statuses and inactive members are never published.**
 
 Rules: [`firestore.rules`](../firestore.rules). Indexes: [`firestore.indexes.json`](../firestore.indexes.json)
-(single-field indexes cover everything else). Rules tests: `npm run test:rules` (Firestore emulator; Java 11+ required).
+(single-field indexes cover everything else). Rules tests: `npm run test:rules` (Firestore + Auth emulators; Java 11+ required).
 
 ## 3. Firebase project setup (one-time)
 
@@ -145,10 +157,15 @@ warning, and CSV export prefixes such cells with `'` to prevent spreadsheet form
 
 ### Publishing
 
-Imports and manual edits change only the private `members` collection. **सदस्य निर्देशिका → प्रकाशित करें** validates every
-active record, requires the publication-permission confirmation (see [V2_DATA_POLICY.md](V2_DATA_POLICY.md)), uploads
-chunks, then switches `published/directory` in one atomic batch. The app keeps its previous snapshot until a complete,
-checksum-verified new version is stored.
+Imports and manual edits change only the private `members` collection. **Member directory → Publish** validates every
+active record, requires the publication-permission confirmation (see [V2_DATA_POLICY.md](V2_DATA_POLICY.md)) and
+publishes **one snapshot per district**: per district it uploads the chunks, then switches `districts/{district}` in one
+write. Unchanged districts are skipped; members without a district are not published (the dialog lists them). A phone
+keeps its previous snapshot until a complete, checksum-verified new version of its own district is stored.
+
+The spreadsheet may have a **District** column (`District`, `जिला`, `जिल्हा`; names such as *Sangli*, *सांगली*,
+*Aurangabad* → Chhatrapati Sambhajinagar are recognised, unknown names are row errors) or use the import's
+**Default district**. Importing never gives anyone access to the app.
 
 ## 6. Emergency contacts, occasions, ads & notices
 
@@ -197,8 +214,9 @@ holiday notification and adjust.
 ## 7. Versioning, rollback and recovery
 
 * Every publication gets `version = publish time (ms)` and is logged in `publications`.
-* **Rollback:** इतिहास → “यह संस्करण पुनः प्रकाशित करें”. Directory: the newest 3 chunk sets are retained; small datasets
-  store their full payload in the log, so any logged version can be restored.
+* **Rollback:** History → “Re-publish this version”. Directory: the newest 3 chunk sets per district are retained (the
+  districts changed by that publication are switched back); small datasets store their full payload in the log, so any
+  logged version can be restored.
 * **Backups:** Spark has no managed export. Download **CSV निर्यात** (all members incl. inactive + internal notes) after each
   significant change and store it securely offline. It can be re-imported in update mode.
 * App side: a failed/partial download never replaces the cached snapshot; corrupt cache files fall back to the previous slot.
@@ -211,23 +229,27 @@ requests fail until the daily reset — it does **not** create charges.
 
 | Activity | Reads/writes |
 | --- | --- |
-| App launch/resume (≤ every 30 min) | ~4 reads (version docs) |
-| New directory version reaching a phone | + 1 read per 400 members (e.g. 3 reads for 1,000 members) |
+| App launch/resume (≤ every 30 min) | ~3 reads (public version docs); signed-in member +3 (own access record, district version, rule look-up) |
+| New district version reaching a member's phone | + 1 read per 400 members of that district (+ rule look-ups) |
+| Access request | 1 write |
 | Admin opens member list | 1 read per member (+1 rules check per write request) |
 | Import of N rows / publish | ~N writes / chunks + 2 writes |
 
 Example: 1,000 users × 3 app opens/day ≈ 12,000 reads/day — well inside the free tier, so the expected recurring cost is
 **₹0 on Spark**, comfortably below the ₹1,000/year target. Risks: very large user growth, frequent republishing to many
-devices, or upgrading to Blaze without a budget alert. Monitor *Firestore → Usage* weekly after launch.
+devices, or upgrading to Blaze without a budget alert. Monitor *Firestore → Usage* weekly after launch. Member-access
+costs and the full service/plan table: [MEMBER_ACCESS.md](MEMBER_ACCESS.md) §8.
 
 ## 9. Local testing with emulators
 
 ```bash
-npm run test:rules        # security rules tests (Firestore emulator)
+npm run test:rules        # security rules + provisioning + sign-in tests (Firestore + Auth emulators)
 # full local stack:
 npx firebase-tools@15.34.0 emulators:start --only auth,firestore --project demo-mdc
 VITE_FIREBASE_API_KEY=fake VITE_FIREBASE_PROJECT_ID=demo-mdc VITE_FIREBASE_AUTH_DOMAIN=demo-mdc.firebaseapp.com \
   VITE_FIREBASE_APP_ID=1:1:web:1 VITE_USE_FIREBASE_EMULATORS=true npm run admin:dev
-VITE_FIREBASE_PROJECT_ID=demo-mdc VITE_FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run dev
+VITE_FIREBASE_PROJECT_ID=demo-mdc VITE_FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 VITE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev
+# member accounts on the emulator: FIREBASE_PROJECT_ID=demo-mdc FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+#   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run provision -- --apply
 ```
 Emulator switches are ignored in production builds.

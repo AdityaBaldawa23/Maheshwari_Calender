@@ -18,10 +18,11 @@
     "generate-panchang": "node scripts/generate-panchang.mjs",
     "cap:sync": "npm run build && cap sync android",
     "cap:open": "cap open android",
-    "test:rules": "npx -y firebase-tools@15.34.0 emulators:exec --only firestore --project demo-mdc \"vitest run --config vitest.rules.config.js\"",
+    "test:rules": "npx -y firebase-tools@15.34.0 emulators:exec --only firestore,auth --project demo-mdc \"vitest run --config vitest.rules.config.js\"",
     "admin:dev": "vite --config admin/vite.config.js",
     "admin:build": "vite build --config admin/vite.config.js",
-    "admin:deploy": "npm run admin:build && npx -y firebase-tools@15.34.0 deploy --only hosting,firestore"
+    "admin:deploy": "npm run admin:build && npx -y firebase-tools@15.34.0 deploy --only hosting,firestore",
+    "provision": "node scripts/provision-members.mjs"
   },
   "dependencies": {
     "@capacitor/android": "7.6.9",
@@ -49,6 +50,7 @@
     "eslint": "9.39.5",
     "eslint-plugin-react-hooks": "5.2.0",
     "eslint-plugin-react-refresh": "0.4.24",
+    "firebase-admin": "13.10.0",
     "globals": "16.5.0",
     "jsdom": "26.1.0",
     "tailwindcss": "4.3.3",
@@ -57,6 +59,7 @@
     "write-excel-file": "4.1.1"
   },
   "overrides": {
-    "@grpc/grpc-js": "^1.14.3"
+    "@grpc/grpc-js": "^1.14.3",
+    "uuid": "^11.1.1"
   }
 }

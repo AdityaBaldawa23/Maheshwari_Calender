@@ -10,6 +10,7 @@ import { VIEW_ORDER } from './constants/views.js';
 import { DayDetailSheet } from './components/DayDetailSheet.jsx';
 import { closeTopSheet } from './components/Sheet.jsx';
 import { PermissionDialog } from './components/PermissionDialog.jsx';
+import { NoticePopup } from './components/NoticePopup.jsx';
 import { useReminders } from './hooks/useReminders.jsx';
 import { CalendarPage } from './pages/CalendarPage.jsx';
 import { OccasionsPage } from './pages/OccasionsPage.jsx';
@@ -126,6 +127,7 @@ export default function App() {
         <DayDetailSheet dateKey={selected} today={today} onClose={() => setSelected(null)} onNavigate={openDate} />
       )}
       <PermissionDialog />
+      <NoticePopup today={today} />
     </div>
   );
 }

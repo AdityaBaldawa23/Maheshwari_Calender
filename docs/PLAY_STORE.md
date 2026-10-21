@@ -71,15 +71,19 @@ e.g. with `npx @capacitor/assets generate` from a 1024 px PNG export.
 
 | Question | Answer |
 | --- | --- |
-| Does your app collect or share any of the required user data types? | **No.** The app collects nothing from its users: no account, no analytics, no identifiers. It only *downloads* published content. |
-| Is all user data encrypted in transit? | Yes — all downloads use HTTPS (Firestore REST). |
-| Do you provide a way for users to request data deletion? | Not applicable for app-user data. Directory entries are corrected/removed by the organisation on request (see privacy policy). |
+| Does your app collect or share any of the required user data types? | **Yes — collected, not shared.** *Personal info → Name* and *Phone number* (access request form; also the sign-in id), plus *Other info* (district, optional father's name / city / membership note). Purpose: **Account management** and **App functionality** (verifying membership). Not used for ads or analytics; not shared with third parties (Google Firebase acts as the service provider). Collection is **optional** — the calendar works without it. |
+| App activity / identifiers / location / device IDs | Not collected. |
+| Is all user data encrypted in transit? | Yes — HTTPS only (Firestore and Firebase Authentication REST). |
+| Do you provide a way for users to request data deletion? | **Yes** — by contacting the organisation (privacy policy contact); the IT Head deletes the request / revokes and deletes the account. Signing out deletes the directory copy from the phone. Play requires a deletion route for apps with accounts: publish the contact (or a web form) in the listing and privacy policy. |
 
 The directory shows **personal information about community members** (names, phone numbers, dates of birth, blood
 groups). This is not data collected from app users. Google Play's *User Data* / *Personal and Sensitive Information*
 policies still require that it is published with permission and that the privacy policy explains it (done in
 PRIVACY_POLICY.md). Keep the consent records described in V2_DATA_POLICY.md; reviewers may ask about them.
-Admin sign-in happens only in the separate web portal, not in the app.
+Admin sign-in happens only in the separate web portal. Members sign in in the app (mobile number + password); the
+directory is visible only to approved members of the same district ([MEMBER_ACCESS.md](MEMBER_ACCESS.md)).
+**App access for review:** Play reviewers need a working test login — provision a reviewer account (approved for a
+test district with dummy data) and enter it under *App content → App access*.
 
 **Ads declaration:** "Does your app contain ads?" — **Yes** once real sponsor ads are on the back
 page (they are static, bundled content, no ad SDK). While only the placeholders exist, answer No.
@@ -92,7 +96,8 @@ location, and digital purchases. Expected rating: Everyone / 3+.
 
 **Government app:** No. **Financial features:** None. **Health:** None.
 
-**Permissions:** Notifications (POST_NOTIFICATIONS) for local festival reminders; INTERNET for downloading published content.
+**Permissions:** Notifications (POST_NOTIFICATIONS) for local festival reminders and admin notice pop-ups; INTERNET for
+downloading published content and member sign-in.
 No exact-alarm, location, camera, contacts, storage or microphone permissions.
 
 ## Pre-launch checklist

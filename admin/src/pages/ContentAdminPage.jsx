@@ -76,6 +76,20 @@ export function ContentAdminPage({ uid }) {
               <LocalizedInput label="Title" value={n.title} onChange={(title) => setItem('notices', i)({ ...n, title })} />
               <LocalizedInput label="Text" value={n.body} onChange={(body) => setItem('notices', i)({ ...n, body })} />
               <Common item={n} onChange={setItem('notices', i)} />
+              {/* MINOR_UI_CHANGES.md, Change 3: pop-up notices */}
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={n.popup === true}
+                  onChange={(e) => setItem('notices', i)({ ...n, popup: e.target.checked || undefined })}
+                  className="mt-1"
+                />
+                <span>
+                  <strong>Pop-up notification</strong> — after publishing, each phone shows this notice once as a notification
+                  (if notifications are allowed) and as a pop-up, the next time the app is opened with internet. Not an instant
+                  push. To notify again, add a new notice.
+                </span>
+              </label>
               <Button variant="ghost" className="!text-sunday" onClick={() => removeItem('notices', i)}>
                 Delete
               </Button>

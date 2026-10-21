@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
+import { AUTH_DOMAIN } from '../../src/shared/phoneIdentity.js';
 
 const AuthContext = createContext(null);
 
@@ -32,7 +33,13 @@ export function AuthProvider({ children }) {
     () => ({
       ...state,
       signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
-      resetPassword: (email) => sendPasswordResetEmail(auth, email),
+      // Administrators have real email addresses. Member accounts use synthetic
+      // addresses that can never receive mail, so no reset email is sent for them
+      // (member passwords are reset by the IT Head — docs/MEMBER_ACCESS.md).
+      resetPassword: async (email) => {
+        if (email.toLowerCase().endsWith(`@${AUTH_DOMAIN}`)) return;
+        await sendPasswordResetEmail(auth, email);
+      },
       signOut: () => signOut(auth),
     }),
     [state],

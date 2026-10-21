@@ -163,6 +163,7 @@ export function checkNotice(notice) {
   problems.push(...checkLocalizedText(notice.body, 'body'));
   if (typeof notice.active !== 'boolean') problems.push('active must be true/false');
   if (!Number.isFinite(notice.priority)) problems.push('priority must be a number');
+  if (notice.popup !== undefined && typeof notice.popup !== 'boolean') problems.push('popup must be true/false');
   problems.push(...checkDateRange(notice));
   return problems;
 }

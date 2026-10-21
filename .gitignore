@@ -28,3 +28,9 @@ release-keys/
 dist-admin/
 firebase-debug.log
 firestore-debug.log
+
+# Member provisioning secrets (IT Head computer only — never commit)
+scripts/local/
+*service-account*.json
+*serviceAccount*.json
+provisioning-log*.jsonl

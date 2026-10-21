@@ -3,13 +3,21 @@ rules_version = '2';
 // Maheshwari Digital Calendar — Firestore Security Rules
 //
 // Access model
-//   Public (anyone, no sign-in):  READ  published/**  (directory snapshot, emergency, content, occasions)
-//   Administrators:               READ/WRITE everything below, via the admin portal
+//   Public (anyone, no sign-in):  READ  published/** except the retired public directory
+//                                       (emergency, content, calendar/occasions)
+//                                 CREATE accessRequests/{phone} (a validated, pending request — no read-back)
+//   Approved members:             READ  their own memberAccess/{uid}
+//                                 READ  districts/{their district} (+ chunks) — no other district
+//   Administrators (IT Head):     READ/WRITE everything below, via the admin portal
 //   Everyone else:                nothing
 //
 // An administrator is a signed-in user whose UID has a document admins/{uid}
 // with active == true. That collection can NOT be written by any client — it is
 // managed only in the Firebase console (or with the Admin SDK). See docs/V2_ADMIN.md.
+//
+// A member's status and district live in memberAccess/{uid}. Only administrators
+// can write it, so a member can never approve themselves, change their district
+// or map their account to another phone number. See docs/MEMBER_ACCESS.md.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -27,6 +35,32 @@ service cloud.firestore {
       return v is int && v > 0;
     }
 
+    function optionalText(d, field, max) {
+      return !(field in d) || (d[field] is string && d[field].size() <= max);
+    }
+
+    function isDistrictId(v) {
+      return v is string && v.matches('[a-z][a-z-]{1,39}');
+    }
+
+    function isMobile(v) {
+      return v is string && v.matches('[6-9][0-9]{9}');
+    }
+
+    // Signed-in member whose access is currently approved for exactly this district.
+    function approvedFor(district) {
+      let path = /databases/$(database)/documents/memberAccess/$(request.auth.uid);
+      return signedIn() && exists(path)
+        && get(path).data.status == 'approved'
+        && get(path).data.district == district;
+    }
+
+    // Member check first: it needs the memberAccess document anyway, and every
+    // document a rule looks up counts as a (billed) read.
+    function canReadDistrict(district) {
+      return approvedFor(district) || isAdmin();
+    }
+
     // ---- Admin roster: console / Admin SDK only -------------------------------
     match /admins/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
@@ -34,18 +68,98 @@ service cloud.firestore {
     }
 
     // ---- Published (public read) ----------------------------------------------
+    // published/directory was the V2.0 public directory. It is retired: only
+    // administrators can still read it (to clean it up) and nobody can write it.
     match /published/{docId} {
-      allow read: if true;
+      allow read: if docId != 'directory' || isAdmin();
       allow create, update: if isAdmin()
         && positiveInt(request.resource.data.version)
         && request.resource.data.schemaVersion is int
-        && (docId in ['directory', 'emergency', 'content', 'calendar'] || docId.matches('occasions_[0-9]{4}'));
+        && (docId in ['emergency', 'content', 'calendar'] || docId.matches('occasions_[0-9]{4}'));
       allow delete: if isAdmin();
 
-      // Directory snapshot chunks: published/directory/chunks/{version}_{n}
       match /chunks/{chunkId} {
-        allow read: if docId == 'directory';
-        allow create, update: if isAdmin() && docId == 'directory'
+        allow read, delete: if isAdmin();
+        allow create, update: if false;
+      }
+    }
+
+    // ---- Access requests (no account needed to ask) ----------------------------
+    // Document ID = normalised 10-digit mobile number, so each number has at most
+    // one request. Requesters cannot read anything back (no enumeration of who has
+    // asked) and cannot approve themselves: status must be 'pending'. A request can
+    // be re-submitted only after the IT Head marked it 'info_requested'.
+    function validRequest(phone) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['phone', 'name', 'fatherName', 'district', 'city', 'org', 'note', 'status', 'submittedAt', 'appVersion'])
+        && d.keys().hasAll(['phone', 'name', 'district', 'status', 'submittedAt'])
+        && isMobile(phone) && d.phone == phone
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 100
+        && isDistrictId(d.district)
+        && optionalText(d, 'fatherName', 100)
+        && optionalText(d, 'city', 100)
+        && optionalText(d, 'note', 300)
+        && optionalText(d, 'appVersion', 20)
+        && (!('org' in d) || d.org in ['yuva', 'mahasabha', 'mahila', 'pragati'])
+        && d.status == 'pending'
+        && d.submittedAt == request.time;
+    }
+
+    match /accessRequests/{phone} {
+      allow read, delete: if isAdmin();
+      allow create: if validRequest(phone);
+      allow update: if isAdmin()
+        || (resource.data.status == 'info_requested' && validRequest(phone));
+    }
+
+    // ---- Member access (status + district), administrators only -----------------
+    // memberAccess/{uid}: uid is always "p" + the 10-digit mobile number.
+    // The account* fields are also written by the IT Head's local Admin SDK
+    // provisioning script, which is not subject to these rules.
+    match /memberAccess/{uid} {
+      allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+             'phone', 'name', 'district', 'status', 'memberId', 'org', 'reason',
+             'approvedAt', 'approvedBy', 'updatedAt', 'updatedBy',
+             'accountStatus', 'accountCheckedAt', 'accountNote'])
+        && isMobile(request.resource.data.phone)
+        && uid == 'p' + request.resource.data.phone
+        && request.resource.data.status in ['approved', 'revoked']
+        && isDistrictId(request.resource.data.district)
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
+    // Access decisions audit trail: append-only, attributed to the deciding admin.
+    match /accessAudit/{entryId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time
+        && request.resource.data.action in
+             ['approve', 'reject', 'request_info', 'revoke', 'restore', 'change_district', 'grant', 'delete_request'];
+      allow update, delete: if false;
+    }
+
+    // ---- District directories (approved members of that district only) ----------
+    //   districts/{district}                         meta { version, schemaVersion, district, recordCount, chunkCount, checksum }
+    //   districts/{district}/chunks/{version}_{n}    { version, index, members: [...] }
+    match /districts/{district} {
+      allow read: if canReadDistrict(district);
+      allow create, update: if isAdmin()
+        && isDistrictId(district)
+        && request.resource.data.district == district
+        && positiveInt(request.resource.data.version)
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.recordCount is int
+        && request.resource.data.chunkCount is int;
+      allow delete: if isAdmin();
+
+      match /chunks/{chunkId} {
+        allow read: if canReadDistrict(district);
+        allow create, update: if isAdmin()
           && positiveInt(request.resource.data.version)
           && request.resource.data.index is int
           && request.resource.data.members is list

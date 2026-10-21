@@ -9,9 +9,11 @@ import { OccasionsAdminPage } from './pages/OccasionsAdminPage.jsx';
 import { ContentAdminPage } from './pages/ContentAdminPage.jsx';
 import { HistoryPage } from './pages/HistoryPage.jsx';
 import { AdminsPage } from './pages/AdminsPage.jsx';
+import { AccessPage } from './pages/AccessPage.jsx';
 
 const SECTIONS = [
   { id: 'members', label: 'Member directory', Page: MembersPage },
+  { id: 'access', label: 'Member access', Page: AccessPage },
   { id: 'import', label: 'Excel / CSV import', Page: ImportPage },
   { id: 'wishes', label: 'Birthday & anniversary wishes', Page: WishesPage },
   { id: 'emergency', label: 'Emergency contacts', Page: EmergencyAdminPage },

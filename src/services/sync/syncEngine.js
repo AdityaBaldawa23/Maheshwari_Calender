@@ -19,8 +19,12 @@ function withLock(name, fn) {
   return run;
 }
 
+const failureStatus = (err) => (err?.offline ? 'offline' : err?.denied ? 'denied' : 'error');
+
 /**
- * @returns {Promise<{status: 'updated'|'current'|'unpublished'|'offline'|'error', snapshot: object|null, error?: string}>}
+ * 'denied' = Security Rules refused the request (e.g. access revoked meanwhile);
+ * the caller decides whether the cached copy must be discarded.
+ * @returns {Promise<{status: 'updated'|'current'|'unpublished'|'offline'|'denied'|'error', snapshot: object|null, error?: string}>}
  */
 export function syncDataset({ dataset, store, remote }) {
   return withLock(dataset.name, async () => {
@@ -29,10 +33,11 @@ export function syncDataset({ dataset, store, remote }) {
     try {
       meta = await dataset.fetchMeta(remote);
     } catch (err) {
-      return { status: err?.offline ? 'offline' : 'error', snapshot: cached, error: String(err?.message ?? err) };
+      return { status: failureStatus(err), snapshot: cached, error: String(err?.message ?? err) };
     }
     if (!meta) return { status: 'unpublished', snapshot: cached };
-    if (cached?.meta?.version === meta.version) return { status: 'current', snapshot: cached };
+    // Same version (and, for the directory, the same district) → nothing to download.
+    if (cached?.meta?.version === meta.version && cached?.meta?.district === meta.district) return { status: 'current', snapshot: cached };
 
     try {
       const payload = await dataset.fetchPayload(remote, meta);
@@ -40,7 +45,7 @@ export function syncDataset({ dataset, store, remote }) {
       return { status: 'updated', snapshot };
     } catch (err) {
       // Keep using the previous valid snapshot.
-      return { status: err?.offline ? 'offline' : 'error', snapshot: cached, error: String(err?.message ?? err) };
+      return { status: failureStatus(err), snapshot: cached, error: String(err?.message ?? err) };
     }
   });
 }

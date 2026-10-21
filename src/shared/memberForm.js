@@ -5,6 +5,7 @@
 import { MEMBER_ID_PATTERN } from './directorySchema.js';
 import { PROFESSION_IDS } from './professions.js';
 import { DEFAULT_ORG, ORG_IDS } from './organizations.js';
+import { isDistrictId } from './districts.js';
 import {
   cleanText, normalizeAge, normalizeBloodGroup, normalizeDate, normalizeMemberId, normalizePhone, normalizePhotoUrl,
   normalizeText,
@@ -14,7 +15,7 @@ const TEXT = { nameHi: 100, nameEn: 100, fatherName: 100, motherName: 100, city:
 
 export const EMPTY_MEMBER_FORM = {
   id: '', nameHi: '', nameEn: '', dob: '', age: '', anniversary: '', bloodGroup: '', fatherName: '', motherName: '',
-  phone: '', city: '', publicNote: '', adminNote: '', status: 'active',
+  phone: '', city: '', district: '', publicNote: '', adminNote: '', status: 'active',
   photo: '', profession: '', professionDetail: '', designation: '', org: DEFAULT_ORG,
 };
 
@@ -51,6 +52,8 @@ export function validateMemberForm(form, { today, isNew }) {
   if (form.profession && !PROFESSION_IDS.includes(form.profession)) errors.profession = 'Unknown profession category';
   else record.profession = form.profession || '';
   record.org = ORG_IDS.includes(form.org) ? form.org : DEFAULT_ORG;
+  if (form.district && !isDistrictId(form.district)) errors.district = 'Unknown district';
+  else record.district = form.district || '';
   const age = normalizeAge(form.age);
   if (age.error) errors.age = age.error;
   else record.age = record.dob ? '' : age.value; // never store an age when a DOB exists

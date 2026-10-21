@@ -3,9 +3,11 @@
  * document, (2) download a full payload only when the version changed, and
  * (3) verify the payload before it may replace the cached copy.
  *
- * Published Firestore documents (all public-read, admin-write):
- *   published/directory (+ chunks)  Maheshwari directory
- *   published/emergency             4 contacts, police/ambulance/fire, 4 hospitals
+ * Firestore documents:
+ *   districts/{id} (+ chunks)       member directory of ONE district — readable only by members
+ *                                   the IT Head approved for that district (signed in, ID token)
+ *   Public-read, admin-write:
+ *   published/emergency            4 contacts, police/ambulance/fire, 4 hospitals
  *   published/content               advertisements + notices
  *   published/calendar              { version, years: { "2027": <version>, … } }
  *   published/occasions_<year>      { version, year, verified, occasions: [...] }
@@ -16,23 +18,30 @@ import { checkAdvertisement, checkNotice, checkOccasion } from '../../utils/vali
 
 const isVersion = (v) => Number.isInteger(v) && v > 0;
 
-export const directoryDataset = {
-  name: 'directory',
-  async fetchMeta(remote) {
-    const meta = await remote.getDoc('published/directory');
-    return meta && isVersion(meta.version) ? meta : null;
-  },
-  async fetchPayload(remote, meta) {
-    const paths = Array.from({ length: meta.chunkCount }, (_, i) => `published/directory/chunks/${chunkId(meta.version, i)}`);
-    const chunks = [];
-    // Batches of 100 documents per request keep requests small and quick.
-    for (let i = 0; i < paths.length; i += 100) chunks.push(...(await remote.getDocs(paths.slice(i, i + 100))));
-    if (chunks.some((c) => !c)) throw new Error('directory: a chunk is missing (publication in progress?)');
-    const result = verifyDirectorySnapshot(meta, chunks);
-    if (!result.ok) throw new Error(`directory: ${result.error}`);
-    return result.members;
-  },
-};
+/**
+ * The approved member's district directory (cached under the name 'directory').
+ * `token` is the member's Firebase ID token. Security Rules refuse every other
+ * district, so even a modified app cannot download more than its own district.
+ */
+export function districtDirectoryDataset(district, token) {
+  return {
+    name: 'directory',
+    async fetchMeta(remote) {
+      const meta = await remote.getDoc(`districts/${district}`, { token });
+      return meta && isVersion(meta.version) && meta.district === district ? meta : null;
+    },
+    async fetchPayload(remote, meta) {
+      const paths = Array.from({ length: meta.chunkCount }, (_, i) => `districts/${district}/chunks/${chunkId(meta.version, i)}`);
+      const chunks = [];
+      // Batches of 100 documents per request keep requests small and quick.
+      for (let i = 0; i < paths.length; i += 100) chunks.push(...(await remote.getDocs(paths.slice(i, i + 100), { token })));
+      if (chunks.some((c) => !c)) throw new Error('directory: a chunk is missing (publication in progress?)');
+      const result = verifyDirectorySnapshot(meta, chunks);
+      if (!result.ok) throw new Error(`directory: ${result.error}`);
+      return result.members;
+    },
+  };
+}
 
 export const emergencyDataset = {
   name: 'emergency',

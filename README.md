@@ -6,17 +6,19 @@ A Hindi-first calendar and community app for the Maheshwari / Marwadi community:
   red, Hindi or English dates), tithi, paksha, month, Vikram Samvat,
   Purnima/Amavasya start–end times, festivals, local reminders. Fully offline from bundled data.
 - **अवसर:** the month's occasions.
-- **माहेश्वरी परिवार:** public directories of Yuva Sangathan, Maha Sabha, Mahila Sangathan and Pragati Mandal, with photos,
-  professions (30 categories), designations, birthdays & anniversaries; downloaded from Firebase, cached on the phone,
-  searchable and filterable offline (blood group, city, profession).
+- **माहेश्वरी परिवार (members only):** directories of Yuva Sangathan, Maha Sabha, Mahila Sangathan and Pragati Mandal,
+  with photos, professions (30 categories), designations, birthdays & anniversaries. Members sign in with mobile number +
+  password after the IT Head approved them; each phone downloads **only its assigned district**, cached and searchable
+  offline (blood group, city, profession). See [docs/MEMBER_ACCESS.md](docs/MEMBER_ACCESS.md).
 - **आपातकालीन संपर्क:** police/ambulance/fire (bundled, offline), 4 community contacts and 4 hospitals.
 - **अधिक:** community notices & advertisements, reminder settings.
-- **Admin portal** (separate web app, English): Excel/CSV import, member editing, birthday/anniversary greeting posters
+- **Admin portal** (separate web app, English): member access (requests, approval, district, revocation, audit),
+  Excel/CSV import, member editing, birthday/anniversary greeting posters
   shared to WhatsApp groups, emergency contacts, occasions & holidays, ads/notices,
   draft → validate → preview → publish, history and rollback.
 
 Stack: React 19 · Vite 6 · Tailwind CSS 4 · Capacitor 7 (Android, target SDK 36) · Firebase (Auth, Firestore, Hosting) · Vitest.
-The app itself ships **no Firebase SDK**: it reads published documents through the Firestore REST API (~101 KB gzipped JS).
+The app itself ships **no Firebase SDK**: it uses the Firestore and Firebase Auth REST APIs (~113 KB gzipped JS).
 
 ## Quick start
 
@@ -32,13 +34,16 @@ npm run admin:dev            # admin portal at http://localhost:5174
 Without `.env.local` the app still works fully offline (calendar, occasions, bundled emergency numbers); the
 directory then says it is not yet published.
 
+Minor UI requests from the owner are tracked in [MINOR_UI_CHANGES.md](MINOR_UI_CHANGES.md).
+
 | Command | What it does |
 | --- | --- |
 | `npm run dev` / `build` / `preview` | App development server / validated production build (`dist/`) / serve it |
 | `npm run admin:dev` / `admin:build` / `admin:deploy` | Admin portal dev server / build (`dist-admin/`) / deploy hosting + rules |
 | `npm run validate-data` | Checks every bundled data file (`-- --strict` also fails on warnings) |
 | `npm run test` | Unit, component and integration tests (no emulator needed) |
-| `npm run test:rules` | Firestore Security Rules tests on the local emulator |
+| `npm run test:rules` | Security Rules, provisioning and sign-in tests on the local Firestore + Auth emulators |
+| `npm run provision` | IT Head only: create/enable/disable member sign-in accounts (dry run; `-- --apply`, `-- --reset <mobile>`) — see docs/MEMBER_ACCESS.md |
 | `npm run lint` | ESLint |
 | `npm run generate-panchang -- <year>` | Pre-computes a new year's panchang + festivals (dev-only) |
 | `npm run cap:sync` / `cap:open` | Build and copy into the Android project / open Android Studio |
@@ -73,7 +78,9 @@ Bundled calendar JSON renders immediately and never depends on the network. On l
 changed does it download the payload (the directory in chunks of 400 members), verify the schema, counts and checksum,
 and store it in a two-slot snapshot file before activating it. A failed or interrupted update keeps the last good
 snapshot. Search and filters run in memory on the cached snapshot. Admins write only through the portal; Firestore
-Security Rules make `published/**` world-readable and everything else admin-only. Admin-published occasions
+Security Rules make `published/**` world-readable, `districts/{d}` readable only by members the IT Head approved for
+district `d`, and everything else admin-only. A signed-in member's sync first re-checks their access (revoked, district
+changed or account disabled → the cached directory is deleted). Admin-published occasions
 replace the bundled list for that year and trigger a reminder reconciliation (deterministic IDs, no duplicates).
 Details: [docs/V2_ADMIN.md](docs/V2_ADMIN.md).
 
@@ -93,6 +100,7 @@ V1 is tagged `v1.0.0` (commit `1772fcc` on `main`): `git checkout v1.0.0 && npm 
 
 ## Documentation
 
+- [docs/MEMBER_ACCESS.md](docs/MEMBER_ACCESS.md) — member sign-in, IT Head approval, provisioning script, password recovery, district sync, offline limits, costs
 - [docs/V2_ADMIN.md](docs/V2_ADMIN.md) — Firebase setup, admin provisioning, schema/rules, Excel import, publishing, rollback, costs
 - [docs/V2_DATA_POLICY.md](docs/V2_DATA_POLICY.md) — directory publication & consent policy (owner must confirm)
 - [docs/PROFESSIONS.md](docs/PROFESSIONS.md) — the 30 profession categories and the words mapped to each
